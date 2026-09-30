@@ -1,0 +1,588 @@
+{
+  "schema_version": 1,
+  "source": {
+    "url": "https://github.com/oso-team/opentelemetry-collector-contrib.git",
+    "commit": "a5d5f6a7f795bbf53e45ef3a9a2291555c5c17b4",
+    "branch": "rdp-module-split-v4",
+    "processor_dir": "processor/resourcedetectionprocessor"
+  },
+  "platform": {
+    "goos": "darwin",
+    "goarch": "arm64",
+    "go_version": "1.26.4"
+  },
+  "builder": {
+    "version": "v0.161.0",
+    "dist": {
+      "module": "github.com/oso-team/otelcol-build-footprint/generated",
+      "name": "otelcol-footprint",
+      "description": "Collector build footprint experiment",
+      "version": "v0.0.0"
+    },
+    "components": {
+      "exporters": [
+        "go.opentelemetry.io/collector/exporter/debugexporter v0.161.1-0.20260928015043-9857cff6c018"
+      ],
+      "processors": [
+        "github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor v0.161.0"
+      ],
+      "receivers": [
+        "go.opentelemetry.io/collector/receiver/otlpreceiver v0.161.1-0.20260928015043-9857cff6c018"
+      ]
+    },
+    "replaces": {
+      "github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor": "processor/resourcedetectionprocessor",
+      "github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig": "internal/k8sconfig",
+      "github.com/open-telemetry/opentelemetry-collector-contrib/internal/metadataproviders": "internal/metadataproviders"
+    }
+  },
+  "targets": [
+    {
+      "id": "full",
+      "label": "Default build (all detectors)",
+      "kind": "full",
+      "detectors": [],
+      "tags": []
+    },
+    {
+      "id": "akamai",
+      "label": "Akamai",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_akamai"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_akamai_detector"
+      ]
+    },
+    {
+      "id": "aks",
+      "label": "AKS",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_aks"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_aks_detector"
+      ]
+    },
+    {
+      "id": "alibaba_ecs",
+      "label": "Alibaba ECS",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_alibaba_ecs"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_alibaba_ecs_detector"
+      ]
+    },
+    {
+      "id": "azure",
+      "label": "Azure",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_azure"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_azure_detector"
+      ]
+    },
+    {
+      "id": "azurecontainerapps",
+      "label": "Azure Container Apps",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_azurecontainerapps"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_azurecontainerapps_detector"
+      ]
+    },
+    {
+      "id": "azureappservice",
+      "label": "Azure App Service",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_azureappservice"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_azureappservice_detector"
+      ]
+    },
+    {
+      "id": "azurefunctions",
+      "label": "Azure Functions",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_azurefunctions"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_azurefunctions_detector"
+      ]
+    },
+    {
+      "id": "consul",
+      "label": "Consul",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_consul"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_consul_detector"
+      ]
+    },
+    {
+      "id": "digitalocean",
+      "label": "DigitalOcean",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_digitalocean"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_digitalocean_detector"
+      ]
+    },
+    {
+      "id": "docker",
+      "label": "Docker",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_docker"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_docker_detector"
+      ]
+    },
+    {
+      "id": "dynatrace",
+      "label": "Dynatrace",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_dynatrace"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_dynatrace_detector"
+      ]
+    },
+    {
+      "id": "ec2",
+      "label": "EC2",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_ec2"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_ec2_detector"
+      ]
+    },
+    {
+      "id": "ecs",
+      "label": "ECS",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_ecs"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_ecs_detector"
+      ]
+    },
+    {
+      "id": "eks",
+      "label": "EKS",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_eks"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_eks_detector"
+      ]
+    },
+    {
+      "id": "elastic_beanstalk",
+      "label": "Elastic Beanstalk",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_elastic_beanstalk"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_elastic_beanstalk_detector"
+      ]
+    },
+    {
+      "id": "env",
+      "label": "Environment",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_env"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_env_detector"
+      ]
+    },
+    {
+      "id": "gcp",
+      "label": "GCP",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_gcp"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_gcp_detector"
+      ]
+    },
+    {
+      "id": "heroku",
+      "label": "Heroku",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_heroku"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_heroku_detector"
+      ]
+    },
+    {
+      "id": "hetzner",
+      "label": "Hetzner",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_hetzner"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_hetzner_detector"
+      ]
+    },
+    {
+      "id": "ibmcloud_classic",
+      "label": "IBM Cloud Classic",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_ibmcloud_classic"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_ibmcloud_classic_detector"
+      ]
+    },
+    {
+      "id": "ibmcloud_vpc",
+      "label": "IBM Cloud VPC",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_ibmcloud_vpc"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_ibmcloud_vpc_detector"
+      ]
+    },
+    {
+      "id": "k8s_api",
+      "label": "K8s API",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_k8s_api"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_k8s_api_detector"
+      ]
+    },
+    {
+      "id": "kubeadm",
+      "label": "Kubeadm",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_kubeadm"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_kubeadm_detector"
+      ]
+    },
+    {
+      "id": "lambda",
+      "label": "Lambda",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_lambda"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_lambda_detector"
+      ]
+    },
+    {
+      "id": "nova",
+      "label": "OpenStack Nova",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_nova"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_nova_detector"
+      ]
+    },
+    {
+      "id": "openshift",
+      "label": "OpenShift",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_openshift"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_openshift_detector"
+      ]
+    },
+    {
+      "id": "oraclecloud",
+      "label": "Oracle Cloud",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_oraclecloud"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_oraclecloud_detector"
+      ]
+    },
+    {
+      "id": "scaleway",
+      "label": "Scaleway",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_scaleway"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_scaleway_detector"
+      ]
+    },
+    {
+      "id": "system",
+      "label": "System",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_system"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_system_detector"
+      ]
+    },
+    {
+      "id": "tencent_cvm",
+      "label": "Tencent CVM",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_tencent_cvm"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_tencent_cvm_detector"
+      ]
+    },
+    {
+      "id": "upcloud",
+      "label": "UpCloud",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_upcloud"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_upcloud_detector"
+      ]
+    },
+    {
+      "id": "vultr",
+      "label": "Vultr",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_vultr"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_vultr_detector"
+      ]
+    },
+    {
+      "id": "oraclecloud-env-system",
+      "label": "Oracle Cloud + env + system",
+      "kind": "combo",
+      "detectors": [
+        "resourcedetection_oraclecloud",
+        "resourcedetection_env",
+        "resourcedetection_system"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_oraclecloud_detector",
+        "enable_resourcedetection_env_detector",
+        "enable_resourcedetection_system_detector"
+      ]
+    },
+    {
+      "id": "ec2-env-system",
+      "label": "EC2 + env + system",
+      "kind": "combo",
+      "detectors": [
+        "resourcedetection_ec2",
+        "resourcedetection_env",
+        "resourcedetection_system"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_ec2_detector",
+        "enable_resourcedetection_env_detector",
+        "enable_resourcedetection_system_detector"
+      ]
+    },
+    {
+      "id": "ecs-env-system",
+      "label": "ECS + env + system",
+      "kind": "combo",
+      "detectors": [
+        "resourcedetection_ecs",
+        "resourcedetection_env",
+        "resourcedetection_system"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_ecs_detector",
+        "enable_resourcedetection_env_detector",
+        "enable_resourcedetection_system_detector"
+      ]
+    },
+    {
+      "id": "eks-ec2-k8s_api-env-system",
+      "label": "EKS + EC2 + K8s API + env + system",
+      "kind": "combo",
+      "detectors": [
+        "resourcedetection_eks",
+        "resourcedetection_ec2",
+        "resourcedetection_k8s_api",
+        "resourcedetection_env",
+        "resourcedetection_system"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_eks_detector",
+        "enable_resourcedetection_ec2_detector",
+        "enable_resourcedetection_k8s_api_detector",
+        "enable_resourcedetection_env_detector",
+        "enable_resourcedetection_system_detector"
+      ]
+    },
+    {
+      "id": "azure-env-system",
+      "label": "Azure + env + system",
+      "kind": "combo",
+      "detectors": [
+        "resourcedetection_azure",
+        "resourcedetection_env",
+        "resourcedetection_system"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_azure_detector",
+        "enable_resourcedetection_env_detector",
+        "enable_resourcedetection_system_detector"
+      ]
+    },
+    {
+      "id": "aks-azure-k8s_api-env-system",
+      "label": "AKS + Azure + K8s API + env + system",
+      "kind": "combo",
+      "detectors": [
+        "resourcedetection_aks",
+        "resourcedetection_azure",
+        "resourcedetection_k8s_api",
+        "resourcedetection_env",
+        "resourcedetection_system"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_aks_detector",
+        "enable_resourcedetection_azure_detector",
+        "enable_resourcedetection_k8s_api_detector",
+        "enable_resourcedetection_env_detector",
+        "enable_resourcedetection_system_detector"
+      ]
+    },
+    {
+      "id": "gcp-k8s_api-env-system",
+      "label": "GCP + K8s API + env + system",
+      "kind": "combo",
+      "detectors": [
+        "resourcedetection_gcp",
+        "resourcedetection_k8s_api",
+        "resourcedetection_env",
+        "resourcedetection_system"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_gcp_detector",
+        "enable_resourcedetection_k8s_api_detector",
+        "enable_resourcedetection_env_detector",
+        "enable_resourcedetection_system_detector"
+      ]
+    },
+    {
+      "id": "openshift-k8s_api-env-system",
+      "label": "OpenShift + K8s API + env + system",
+      "kind": "combo",
+      "detectors": [
+        "resourcedetection_openshift",
+        "resourcedetection_k8s_api",
+        "resourcedetection_env",
+        "resourcedetection_system"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_openshift_detector",
+        "enable_resourcedetection_k8s_api_detector",
+        "enable_resourcedetection_env_detector",
+        "enable_resourcedetection_system_detector"
+      ]
+    },
+    {
+      "id": "docker-env-system",
+      "label": "Docker + env + system",
+      "kind": "combo",
+      "detectors": [
+        "resourcedetection_docker",
+        "resourcedetection_env",
+        "resourcedetection_system"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_docker_detector",
+        "enable_resourcedetection_env_detector",
+        "enable_resourcedetection_system_detector"
+      ]
+    }
+  ]
+}
