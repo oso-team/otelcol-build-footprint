@@ -12,7 +12,7 @@ The report UI builds on the [previously published resource-detector report](http
 
 The 42 Collector binaries were built and measured from a clean public checkout of the branch. The runner also recorded reachable module inventories, package counts, and portable OCB manifests. The default build measured 186 reachable modules and 108,223,826 binary bytes; the GCP-only build measured 76 reachable modules and 47,058,562 binary bytes.
 
-The report is a standalone HTML file with embedded CSS, JavaScript, and a measured data snapshot. Open `docs/index.html` directly, or serve `docs/` over HTTP (for example, `python3 -m http.server 8000 --directory docs`) and open `http://localhost:8000`. GitHub Pages can publish the `docs/` directory from `main` after the repository owner enables Pages.
+The report is a standalone HTML file with embedded CSS, JavaScript, and a measured data snapshot. Open the [published report](https://oso-team.github.io/otelcol-build-footprint/), open `docs/index.html` directly, or serve `docs/` over HTTP (for example, `python3 -m http.server 8000 --directory docs`) and open `http://localhost:8000`. GitHub Pages serves `docs/` from `main`.
 
 ## Reproduce the experiment
 

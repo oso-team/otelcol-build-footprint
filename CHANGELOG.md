@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-14
+
+- Publish the standalone report through GitHub Pages from `main`/`docs`.
+
 ## 2026-09-29
 
 - Focus repository guidance and publication checks on reproducible results.
