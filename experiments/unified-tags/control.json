@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "source": {
+    "url": "https://github.com/oso-team/opentelemetry-collector-contrib.git",
+    "commit": "3b4490b203c24b71ab650aec33399a5c4c1ca491",
+    "branch": "rdp-module-split-v4",
+    "processor_dir": "processor/resourcedetectionprocessor"
+  },
+  "platform": {
+    "goos": "darwin",
+    "goarch": "arm64",
+    "go_version": "1.27.2"
+  },
+  "builder": {
+    "version": "v0.163.0",
+    "dist": {
+      "module": "github.com/oso-team/otelcol-build-footprint/generated",
+      "name": "otelcol-footprint",
+      "description": "Collector build footprint experiment",
+      "version": "v0.0.0"
+    },
+    "components": {
+      "exporters": [
+        "go.opentelemetry.io/collector/exporter/debugexporter v0.163.0"
+      ],
+      "processors": [
+        "github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor v0.163.0"
+      ],
+      "receivers": [
+        "go.opentelemetry.io/collector/receiver/otlpreceiver v0.163.0"
+      ]
+    },
+    "replaces": {
+      "github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor": "processor/resourcedetectionprocessor",
+      "github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig": "internal/k8sconfig",
+      "github.com/open-telemetry/opentelemetry-collector-contrib/internal/metadataproviders": "internal/metadataproviders"
+    }
+  },
+  "targets": [
+    {
+      "id": "full",
+      "label": "Default build (all detectors)",
+      "kind": "full",
+      "detectors": [],
+      "tags": []
+    },
+    {
+      "id": "ec2",
+      "label": "EC2",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_ec2"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_ec2_detector"
+      ]
+    },
+    {
+      "id": "oraclecloud",
+      "label": "Oracle Cloud",
+      "kind": "single",
+      "detectors": [
+        "resourcedetection_oraclecloud"
+      ],
+      "tags": [
+        "remove_all_resourcedetection_detectors",
+        "enable_resourcedetection_oraclecloud_detector"
+      ]
+    }
+  ]
+}

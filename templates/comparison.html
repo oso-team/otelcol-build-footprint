@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resource detector build comparison</title>
+<style>
+:root{font:16px/1.5 system-ui,sans-serif;color:#182536;background:#f7f8fa}body{max-width:1120px;margin:auto;padding:36px 24px}h1{font-size:2.4rem;line-height:1.15;margin-bottom:12px}h2{font-size:1.35rem;margin-top:32px}p{max-width:85ch}.muted{color:#546477}.panel{background:white;border:1px solid #dbe1e9;border-radius:10px;padding:22px;margin:20px 0}select,input,button{font:inherit;padding:7px;border:1px solid #9aa8b8;border-radius:5px;background:white}label{display:inline-block;margin-right:18px}table{border-collapse:collapse;width:100%}th,td{padding:10px 8px;text-align:left;border-bottom:1px solid #e4e8ee;font-variant-numeric:tabular-nums}th{font-size:.85rem;color:#546477}pre,code{font:13px/1.55 ui-monospace,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f5f7fa;padding:14px;border-radius:6px;max-height:340px;overflow:auto}.charts{display:grid;grid-template-columns:1fr 1fr;gap:32px}.barrow{margin:16px 0}.barrow span{display:block;font-size:.88rem}.track{height:16px;border-radius:3px;background:#edf1f6;margin:4px 0}.bar{height:100%;border-radius:3px}.default{background:#3974b9}.optout{background:#be711b}.unified{background:#25876f}.value{font-variant-numeric:tabular-nums;font-weight:600}.pill{display:inline-block;font-size:.78rem;border:1px solid #c7d0dc;padding:2px 8px;border-radius:15px}a{color:#235d9d}.scroll{overflow:auto}details{margin:12px 0}summary{cursor:pointer;font-weight:600}@media(max-width:700px){.charts{grid-template-columns:1fr}body{padding:20px 14px}h1{font-size:1.9rem}}
+</style>
+<header>
+<span class="pill">Matched source and toolchain experiment</span>
+<h1>Resource detector build comparison</h1>
+<p>Compare the same minimal Collector with every detector, upstream’s opt-out tags, and the simplified opt-in design. Inspect the dependencies that remain and the exact inputs used.</p>
+<p id="versions" class="muted"></p>
+<p class="muted">The prototype and merged control are local commits pending review and push. These results are separate from the historical report.</p>
+</header>
+<main>
+<section class="panel" aria-label="Build comparison">
+<label for="target">Detector selection <select id="target"></select></label>
+<p id="coverage" class="muted"></p>
+<div class="charts"><div><h2>Reachable modules</h2><div id="module-bars"></div></div><div><h2>Collector binary size</h2><div id="binary-bars"></div></div></div>
+<div class="scroll"><table><thead><tr><th>Build strategy</th><th>Modules</th><th>Packages</th><th>Binary bytes</th><th>Smaller than default</th></tr></thead><tbody id="metrics"></tbody></table></div>
+<p id="parity"></p>
+</section>
+<section class="panel"><h2>Inspect dependencies</h2>
+<label for="module-mode">Module list <select id="module-mode"><option value="removed">Removed by unified versus upstream opt-out</option><option value="unified">Remaining in unified</option><option value="optout">Remaining in upstream opt-out</option><option value="default">Remaining in default</option></select></label>
+<label for="filter">Filter <input id="filter" type="search" placeholder="Module path"></label>
+<p id="module-count" class="muted" aria-live="polite"></p><pre id="module-list"></pre>
+</section>
+<section class="panel"><h2>Reproduce and verify</h2><p>Every strategy uses the same Go, OCB, Collector dependencies, platform and build flags. Source SHAs differ only where the implementation under test differs. Version checks run before and after each phase and verify the metadata embedded in every binary.</p><div id="inputs"></div>
+<p><a href="comparison.json">Download complete comparison data</a> · <a href="index.html">Historical experiment</a></p>
+<ul id="notes"></ul>
+</section>
+</main>
+<script id="comparison-data" type="application/json">COMPARISON_DATA</script>
+<script>
+'use strict';
+const data=JSON.parse(document.querySelector('#comparison-data').textContent);
+const $=id=>document.getElementById(id), names={default:'Default: all detectors',optout:'Upstream: opt-out tags',unified:'Simplified: opt-in tags'};
+const entries=Object.fromEntries(Object.entries(data.runs).map(([key,run])=>[key,Object.fromEntries([run.report.baseline,...run.report.builds].map(build=>[build.id,build]))]));
+const number=value=>value.toLocaleString('en-US'), mib=value=>(value/1048576).toFixed(2)+' MiB';
+function element(tag,text,parent){const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(parent)parent.appendChild(node);return node;}
+for(const row of data.rows){const option=element('option',row.label,$('target'));option.value=row.id;}
+if(data.rows.some(row=>row.id==='oraclecloud'))$('target').value='oraclecloud';
+const s=data.settings;
+$('versions').textContent=`Go ${s.go_version} · OCB ${s.builder_version} · Collector ${s.collector_experimental} / ${s.collector_stable} · ${s.goos}/${s.goarch} · CGO ${s.cgo_enabled} · ${s.goflags} · linker ${s.ldflags}`;
+$('coverage').textContent=`${data.rows.length} measured detector selections. Default means all RDP detectors in the same OTLP → RDP → debug Collector.`;
+for(const note of data.notes)element('li',note,$('notes'));
+function selected(){return data.rows.find(row=>row.id===$('target').value);}
+function build(row,strategy){const ref=row[strategy];return entries[ref.run][ref.id];}
+function modules(){const row=selected(),mode=$('module-mode').value;let list;
+if(mode==='removed'){const kept=new Set(build(row,'unified').modules);list=build(row,'optout').modules.filter(name=>!kept.has(name));}else list=build(row,mode).modules;
+const filtered=list.filter(name=>name.toLowerCase().includes($('filter').value.toLowerCase()));
+$('module-count').textContent=`${filtered.length} of ${list.length} modules shown`;$('module-list').textContent=filtered.join('\n')||'No matching modules.';}
+function render(){const row=selected(),keys=['default','optout','unified'];$('metrics').replaceChildren();$('inputs').replaceChildren();
+for(const [id,metric,format] of [['module-bars','module_count',number],['binary-bars','binary_bytes',mib]]){const parent=$(id);parent.replaceChildren();const max=Math.max(...keys.map(key=>build(row,key)[metric]));for(const key of keys){const item=element('div',undefined,parent);item.className='barrow';element('span',names[key],item);const track=element('div',undefined,item);track.className='track';track.setAttribute('aria-hidden','true');const bar=element('div',undefined,track);bar.className='bar '+key;bar.style.width=(100*build(row,key)[metric]/max)+'%';element('span',format(build(row,key)[metric]),item).className='value';}}
+for(const key of keys){const item=build(row,key),tr=element('tr',undefined,$('metrics'));for(const value of [names[key],number(item.module_count),number(item.package_count),number(item.binary_bytes),(100*(1-item.binary_bytes/build(row,'default').binary_bytes)).toFixed(1)+'%'])element('td',value,tr);
+const detail=element('details',undefined,$('inputs'));element('summary',names[key],detail);const run=data.runs[row[key].run];element('pre',`Source: ${run.manifest.source.commit}\nTags: ${item.tags.join(',')||'(none)'}\nBinary SHA-256: ${run.binary_receipts[item.id].sha256}`,detail);}
+if(row.control){const control=build(row,'control'),current=build(row,'unified'),sameModules=JSON.stringify(control.modules)===JSON.stringify(current.modules);$('parity').textContent=`Old implementation control: ${control.module_count} modules, ${number(control.binary_bytes)} bytes. Unified: ${sameModules?'identical module set':'different module set'}; binary size difference ${number(current.binary_bytes-control.binary_bytes)} bytes.`;}else $('parity').textContent='No old-implementation control was measured for this selection.';
+modules();}
+$('target').addEventListener('change',render);$('module-mode').addEventListener('change',modules);$('filter').addEventListener('input',modules);render();
+</script>
+</html>

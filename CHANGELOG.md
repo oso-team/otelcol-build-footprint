@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-15
+
+- Add pinned manifests and a guarded runner for the matched unified-detector-tag comparison.
+- Validate source, toolchain, module and binary provenance before exporting cross-strategy results.
+- Add a standalone three-way comparison with module inspection and an old-implementation control.
+
 ## 2026-10-14
 
 - Publish the standalone report through GitHub Pages from `main`/`docs`.

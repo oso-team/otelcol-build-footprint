@@ -14,7 +14,9 @@ The 42 Collector binaries were built and measured from a clean public checkout o
 
 The report is a standalone HTML file with embedded CSS, JavaScript, and a measured data snapshot. Open the [published report](https://oso-team.github.io/otelcol-build-footprint/), open `docs/index.html` directly, or serve `docs/` over HTTP (for example, `python3 -m http.server 8000 --directory docs`) and open `http://localhost:8000`. GitHub Pages serves `docs/` from `main`.
 
-## Reproduce the experiment
+## Reproduce the historical experiment
+
+This section reproduces the historical September dataset. The project Go pin now selects the new comparison toolchain; pass an explicit Go 1.26.4 executable for this historical run.
 
 Prerequisites: Python 3.10 or newer, Git, Go `1.26.4`, and released OCB `v0.161.0`. `experiment.json` pins the toolchain, public source commit, Collector component module versions, platform, and 42 build targets. The branch's core module dependencies use its exact public `v0.161.1` pseudo-version; the resource-detection processor is replaced with the local public checkout. This repository itself has no Python or JavaScript package dependencies.
 
@@ -69,6 +71,39 @@ The detector-selection implementation being measured is public. Its four initial
 | `tools/publish.py` | Publication validation and dataset update |
 | `docs/` | Dependency-free interactive report and published result snapshot |
 | `tests/` | Data-contract and publication checks |
+
+## Matched unified-tag comparison
+
+The new experiment compares upstream default, upstream opt-out tags, and the simplified opt-in design on one frozen upstream base. The old implementation is an extra EC2/Oracle parity control. Historical data stays unchanged in `experiment.json` and `docs/index.html`.
+
+`experiments/unified-tags/versions.lock.json` records Go 1.27.2, OCB/Collector 0.163.0, Core stable 1.69.0, SDK 1.47.0 and identical build settings. Each source manifest records its exact commit and tags. The prototype/control commits are local until reviewed and pushed.
+
+Select the manifest source commit in your existing Contrib checkout, then run:
+
+```sh
+python3 tools/locked_run.py \
+  --manifest experiments/unified-tags/unified.json \
+  --lock experiments/unified-tags/versions.lock.json \
+  --source /path/to/contrib \
+  --output /path/to/new-run \
+  --go /path/to/go-1.27.2/bin/go \
+  --builder /path/to/ocb-0.163.0-built-with-go-1.27.2
+```
+
+Repeat with `upstream.json` and `control.json` at their respective source commits, using the same executables and settings. `--targets ec2,oraclecloud` gives a small first run. The runner rejects dirty or incorrect source, mismatched versions, changed module files or measurement code, tool replacement, and incorrect embedded binary settings. It records tool hashes, resolved module versions, before/after checkpoints and every binary checksum.
+
+Combine the completed runs:
+
+```sh
+python3 tools/compare.py \
+  --upstream /path/to/upstream-run \
+  --unified /path/to/unified-run \
+  --control /path/to/control-run \
+  --lock experiments/unified-tags/versions.lock.json \
+  --output docs/comparison.json --html docs/comparison.html
+```
+
+The comparison validates each selected target set with the existing publication contract, requires identical tools, component composition and resolved module versions across runs, and rejects local paths in exported data. The standalone HTML embeds the validated dataset and works offline. Linux/amd64 OKE smoke tests are separate runtime evidence; their binary sizes are not mixed with Darwin/arm64 measurements.
 
 ## License and attribution
 
