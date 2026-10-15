@@ -2,7 +2,7 @@
   "schema_version": 1,
   "source": {
     "url": "https://github.com/oso-team/opentelemetry-collector-contrib.git",
-    "commit": "8382473f34c5e99cc76eb22e5e1cb3935966d47d",
+    "commit": "1df29b559af87d5a58fb29253f73917ef278ed26",
     "branch": "codex/rdp-unified-detector-tags",
     "processor_dir": "processor/resourcedetectionprocessor"
   },

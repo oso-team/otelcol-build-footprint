@@ -74,6 +74,8 @@ The detector-selection implementation being measured is public. Its four initial
 
 ## Matched unified-tag comparison
 
+[Open the standalone three-way report](docs/comparison.html) or inspect [the measured dataset](docs/comparison.json).
+
 The new experiment compares upstream default, upstream opt-out tags, and the simplified opt-in design on one frozen upstream base. The old implementation is an extra EC2/Oracle parity control. Historical data stays unchanged in `experiment.json` and `docs/index.html`.
 
 `experiments/unified-tags/versions.lock.json` records Go 1.27.2, OCB/Collector 0.163.0, Core stable 1.69.0, SDK 1.47.0 and identical build settings. Each source manifest records its exact commit and tags. The prototype/control commits are local until reviewed and pushed.
