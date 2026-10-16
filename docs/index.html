@@ -208,7 +208,7 @@
     width: 1px; background: var(--baseline);
   }
   .b-fill { position: absolute; inset: 0 auto 0 0; }
-  .b-fill.keep { background: var(--accent); border-radius: 0 4px 4px 0; }
+  .b-fill.keep { background: var(--accent); border-radius: 0; }
   .b-fill.removed {
     background: var(--bad-wash);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bad) 45%, transparent);
@@ -323,6 +323,7 @@
   .build-explorer .bar-row .b-lbl {font-size:12.5px;white-space:normal;overflow:visible}
   .build-explorer .bar-row[data-strategy="optout"] .b-fill.keep {background:var(--ink-2)}
   .build-explorer .b-track {display:block}
+  .build-explorer .axis {justify-content:flex-end;padding-left:0}
   .build-explorer .b-val {font-size:12px}
   .build-explorer .b-counts {white-space:normal}
   .build-explorer .baseline-value {text-align:right;font-variant-numeric:tabular-nums}
@@ -395,7 +396,7 @@
 <div class="explorer-controls"><label for="build-metric">Bar measurement <select id="build-metric"><option value="modules">Reachable modules</option><option value="bytes">Collector binary size</option></select></label><span id="build-coverage" class="caption" aria-live="polite"></span></div>
 <div class="chart-card" id="build-chart-view">
 <div id="build-baseline" class="build-baseline"></div>
-<div class="axis"><span>0</span><span id="build-axis"></span></div>
+<div class="axis"><span id="build-axis"></span></div>
 <div id="build-chart"></div>
 <div class="chart-foot"><span class="key">Solid: retained in this build</span><span class="key"><i class="swatch gone"></i>Pale red: removed versus upstream all</span><span class="key" id="build-unit-note"></span></div>
 </div>

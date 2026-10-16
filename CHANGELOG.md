@@ -2,6 +2,8 @@
 
 ## 2026-10-16
 
+- Remove the disconnected zero-axis label and make retained/removed bar segments meet at a straight seam.
+
 - Restore Compare Builds with a shared upstream baseline, paired bars for all 41 selections, filters, module/binary measures, and a table view.
 - Restore hover invitations and categorized red/green module diffs with selectable baselines, package details, exact reproduction inputs, copyable tags, and shareable inspection URLs.
 - Preserve the original external report and all measurement data unchanged.
