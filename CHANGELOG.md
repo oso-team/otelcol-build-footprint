@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-16
+
+- Restore Compare Builds with a shared upstream baseline, paired bars for all 41 selections, filters, module/binary measures, and a table view.
+- Restore hover invitations and categorized red/green module diffs with selectable baselines, package details, exact reproduction inputs, copyable tags, and shareable inspection URLs.
+- Preserve the original external report and all measurement data unchanged.
+
 ## 2026-10-15
 
 - Lead the homepage and comparison with pinned upstream-main versus PR measurements; preserve the September report at historical.html.

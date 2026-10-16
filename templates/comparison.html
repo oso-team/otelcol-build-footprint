@@ -169,10 +169,196 @@
   .footer {border-top:1px solid var(--grid);margin-top:24px;padding:24px 0 40px;color:var(--muted);font-size:12px}
   @media(max-width:920px){.hero{grid-template-columns:1fr;gap:24px;padding-top:28px}.hero h1{font-size:34px}}
   @media(max-width:700px){.wrap{padding:0 18px}.top{padding:12px 18px}.hero h1{font-size:30px}.charts,.controls,.mechanism{grid-template-columns:1fr;gap:16px}.kpis{grid-template-columns:1fr;gap:8px}.tile{padding:12px 14px}.tile .t-value{font-size:25px}.section-head h2{font-size:21px}.top .repo{font-size:11px;overflow-wrap:anywhere}.barrow{font-size:12px}.inline-select{max-width:calc(100vw - 78px)}}
+  /* ---------- explorer ---------- */
+  .toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 18px 0 12px; }
+  .fbtn {
+    border: 1px solid var(--border); background: var(--surface); color: var(--ink-2);
+    border-radius: 999px; padding: 4px 14px; font-size: 13px; cursor: pointer;
+  }
+  .fbtn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  .toolbar .spacer { flex: 1; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .seg button { border: 0; background: var(--surface); color: var(--ink-2); padding: 4px 14px; font-size: 13px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--border); }
+  .seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px 14px; }
+  .axis {
+    display: flex; justify-content: space-between; font-size: 12px; color: var(--muted);
+    margin: 0 0 6px; padding-left: 236px;
+  }
+  .grp-h {
+    font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted);
+    margin: 14px 0 6px; font-weight: 600;
+  }
+  .grp-h:first-of-type { margin-top: 2px; }
+  .bars { display: flex; flex-direction: column; gap: 4px; }
+  .bar-row {
+    display: grid; grid-template-columns: 220px minmax(130px, 1fr) minmax(220px, 250px); gap: 16px; align-items: center;
+    width: 100%; border: 0; background: none; padding: 3px 4px; border-radius: 6px;
+    text-align: left; cursor: pointer;
+  }
+  .bar-row:hover { background: var(--accent-soft); }
+  .bar-row.sel { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .bar-row .b-lbl { font-size: 13.5px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-row .b-lbl small { color: var(--muted); font-size: 11.5px; margin-left: 6px; }
+  .b-track { position: relative; height: 16px; border-radius: 0 4px 4px 0; overflow: hidden; }
+  .b-track::after { /* default-build reference rule at 100% */
+    content: ""; position: absolute; right: 0; top: -3px; bottom: -3px;
+    width: 1px; background: var(--baseline);
+  }
+  .b-fill { position: absolute; inset: 0 auto 0 0; }
+  .b-fill.keep { background: var(--accent); border-radius: 0 4px 4px 0; }
+  .b-fill.removed {
+    background: var(--bad-wash);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bad) 45%, transparent);
+  }
+  .bar-row .b-val { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 12.5px; font-weight: 600; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .bar-row .b-counts { white-space: nowrap; }
+  .bar-row .inspect { color: var(--accent-ink); font-size: 11.5px; font-weight: 650; }
+  .bar-row:hover .inspect, .bar-row:focus-visible .inspect { text-decoration: underline; }
+  .chart-foot { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 12px; border-top: 1px solid var(--grid); padding-top: 10px; }
+  .chart-foot .key { display: inline-flex; align-items: center; gap: 7px; }
+  .keyline { width: 12px; height: 0; border-top: 1px solid var(--baseline); }
+
+  table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.tbl th, table.tbl td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--grid); }
+  table.tbl th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
+  table.tbl td.num, table.tbl th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.tbl tbody tr { cursor: pointer; }
+  table.tbl tbody tr:hover { background: var(--accent-soft); }
+  table.tbl td .delta-txt { color: var(--good); font-weight: 600; }
+  .tbl-scroll { overflow-x: auto; }
+
+  /* ---------- tooltip ---------- */
+  #tip {
+    position: fixed; z-index: 30; pointer-events: none; display: none;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.14);
+    padding: 9px 12px; font-size: 12.5px; max-width: 300px; color: var(--ink-2);
+  }
+  #tip .tt-title { font-weight: 700; color: var(--ink); margin-bottom: 3px; font-size: 13px; }
+  #tip .tt-row { display: flex; justify-content: space-between; gap: 16px; }
+  #tip .tt-row b { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink); }
+  #tip .tt-note { margin-top: 6px; color: var(--muted); }
+  #tip code { color: var(--ink); word-break: break-all; }
+
+  /* ---------- detail ---------- */
+  .detail-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 22px 24px; margin-top: 16px;
+  }
+  .detail-head { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .detail-head h3 { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+  .detail-head .spacer { flex: 1; }
+  .xbtn {
+    border: 1px solid var(--border); background: none; color: var(--ink-2);
+    border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-size: 15px; line-height: 1;
+  }
+  .xbtn:hover { background: var(--accent-soft); }
+  .det-chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 4px; }
+  .det-chips .chip.det { font-family: ui-monospace, Menlo, Consolas, monospace; font-weight: 500; }
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0; }
+  .cmd {
+    background: var(--code-bg); border-radius: 8px; padding: 12px 14px; font-size: 12.5px;
+    overflow-x: auto; white-space: pre; position: relative; color: var(--ink-2);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; line-height: 1.6;
+  }
+  .cmd b { color: var(--ink); font-weight: 600; }
+  .copybtn {
+    position: absolute; top: 8px; right: 8px; border: 1px solid var(--border);
+    background: var(--surface); border-radius: 6px; padding: 2px 10px; font-size: 12px;
+    cursor: pointer; color: var(--ink-2);
+  }
+  .copybtn:hover { background: var(--accent-soft); }
+  .evidence-links { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; }
+
+  .diff-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 22px 0 10px; }
+  .diff-head h4 { margin: 0; font-size: 15px; }
+  .diff-head input[type="search"] {
+    border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+    border-radius: 8px; padding: 5px 12px; font-size: 13px; width: 240px; max-width: 100%;
+  }
+  .diff-legend { display: flex; gap: 14px; font-size: 12.5px; color: var(--ink-2); }
+  .diff-legend .rm { color: var(--bad); font-weight: 600; }
+  .diff-legend .kp { color: var(--good); font-weight: 600; }
+  .cat-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .cat-chips .chip.rmv { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 40%, transparent); background: var(--bad-wash); }
+
+  .diff-group { margin-bottom: 4px; }
+  .diff-group > .dg-h {
+    display: flex; align-items: baseline; gap: 10px; padding: 8px 4px 4px;
+    font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600;
+  }
+  .dg-h .counts { text-transform: none; letter-spacing: 0; font-weight: 500; }
+  .dg-h .counts .rm { color: var(--bad); }
+  .dg-h .counts .kp { color: var(--good); }
+  .diff-rows { display: flex; flex-direction: column; }
+  .drow {
+    display: grid; grid-template-columns: 20px 1fr; gap: 8px; align-items: baseline;
+    padding: 2px 8px; border-radius: 4px; font-size: 13px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  .drow .sgn { font-weight: 700; text-align: center; }
+  .drow.rm { background: var(--bad-wash); }
+  .drow.rm .sgn, .drow.rm code { color: var(--bad); }
+  .drow.rm code { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--bad) 45%, transparent); }
+  .drow.kp .sgn, .drow.kp code { color: var(--good); }
+  .drow.kp { background: var(--good-wash); }
+  .drow + .drow { margin-top: 2px; }
+  .drow code { font-size: 12.5px; word-break: break-all; }
+
+
+  #explorer {scroll-margin-top:20px}
+  .build-explorer [hidden] {display:none !important}
+  .explorer-controls {display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .explorer-controls label {display:flex;align-items:center;gap:8px;font-size:13px}
+  .explorer-controls select {width:auto}
+  .build-baseline {display:grid;grid-template-columns:240px minmax(90px,1fr) 180px;gap:16px;align-items:center;padding:14px 4px 18px;border-bottom:1px solid var(--grid);margin-bottom:16px;font-size:13px}
+  .build-baseline .b-track {background:var(--baseline)}
+  .build-pair {padding:12px 0;border-bottom:1px solid var(--grid)}
+  .build-pair h3 {font-size:14px;margin:0 0 6px}
+  .build-pair .pair-delta {margin:5px 4px 0;font-size:12px;color:var(--muted)}
+  .build-explorer .bar-row {grid-template-columns:240px minmax(90px,1fr) 180px;min-height:58px;padding:7px 4px;gap:16px}
+  .build-explorer .bar-row .b-lbl {font-size:12.5px;white-space:normal;overflow:visible}
+  .build-explorer .bar-row[data-strategy="optout"] .b-fill.keep {background:var(--ink-2)}
+  .build-explorer .b-track {display:block}
+  .build-explorer .b-val {font-size:12px}
+  .build-explorer .b-counts {white-space:normal}
+  .build-explorer .baseline-value {text-align:right;font-variant-numeric:tabular-nums}
+  .build-explorer table.tbl {table-layout:fixed;min-width:720px}
+  .build-explorer table.tbl th {white-space:normal;overflow-wrap:anywhere}
+  .build-explorer table.tbl th:nth-child(1){width:19%}
+  .build-explorer table.tbl th:nth-child(2){width:27%}
+  .build-explorer table.tbl th:nth-child(3),.build-explorer table.tbl th:nth-child(4){width:10%}
+  .build-explorer table.tbl th:nth-child(5){width:17%}
+  .build-explorer table.tbl th:nth-child(6){width:17%}
+  .build-explorer table.tbl td:nth-child(1),.build-explorer table.tbl td:nth-child(2),.build-explorer table.tbl td:nth-child(6){white-space:normal;overflow-wrap:anywhere}
+  .build-explorer .table-select {overflow-wrap:anywhere;border:0;background:none;text-align:left;color:var(--accent-ink);padding:4px;cursor:pointer}
+  .build-explorer .detail-card {scroll-margin-top:24px}
+  .build-explorer .stat-row {grid-template-columns:repeat(4,minmax(0,1fr))}
+  .build-explorer .stat-row .t-value {font-size:23px}
+  .build-explorer .cmd {padding-top:52px}
+  .build-explorer .copybtn {min-height:36px}
+  .build-explorer .xbtn {min-width:44px;min-height:44px}
+  .build-explorer .diff-head input {min-height:44px}
+  .build-explorer .diff-controls {display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:18px 0}
+  .build-explorer .diff-controls label {display:flex;gap:8px;align-items:center;font-size:13px}
+  .build-explorer .diff-controls select {width:auto}
+  .build-explorer .evidence-links {margin:12px 0}
+  .build-explorer .chip {white-space:normal}
+  .build-explorer .diff-counts {font-size:13px}
+  #build-tip {position:fixed;z-index:40;pointer-events:none;max-width:min(340px,calc(100vw - 20px));background:var(--surface);color:var(--ink-2);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 18px rgba(0,0,0,.14);padding:10px 12px;font-size:12px}
+  #build-tip strong {overflow-wrap:anywhere;display:block;color:var(--ink);margin-bottom:4px}
+  #build-tip .inspect {margin-top:6px;color:var(--accent-ink);font-weight:650}
+  .build-explorer .category-note {font-size:12px;color:var(--muted)}
+  @media(max-width:920px){.build-explorer .bar-row,.build-baseline{grid-template-columns:180px minmax(90px,1fr) 150px;gap:10px}.build-explorer .stat-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:600px){.build-explorer .bar-row,.build-baseline{grid-template-columns:minmax(0,1fr);grid-template-areas:"label" "track" "value";gap:7px}.build-explorer .b-lbl,.build-baseline .baseline-label{grid-area:label}.build-explorer .b-track{grid-area:track}.build-explorer .bar-row .b-val,.build-baseline .baseline-value{grid-area:value;align-items:flex-start;text-align:left}.build-explorer .detail-card{padding:18px 12px}.build-explorer .stat-row{grid-template-columns:minmax(0,1fr)}.build-explorer .diff-head{align-items:flex-start}.build-explorer .diff-head input{width:100%}.build-explorer .toolbar .spacer{display:none}.build-explorer .evidence-links{gap:10px}.build-explorer .cmd{white-space:pre-wrap;overflow-wrap:anywhere}.build-explorer .diff-controls{align-items:stretch;flex-direction:column}.build-explorer .diff-controls label{align-items:stretch;flex-direction:column}.build-explorer .diff-controls select{width:100%}.build-explorer .axis{padding-left:0}}
+
 </style>
 </head>
 <body>
-<header class="wrap top"><span class="repo mono">otelcol-build-footprint / resource detection</span><span class="spacer"></span><a href="historical.html">September archive</a><label class="mono">Theme <select id="theme" class="theme-control" aria-label="Color theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label></header>
+<header class="wrap top"><span class="repo mono">otelcol-build-footprint / resource detection</span><span class="spacer"></span><a href="#explorer">Compare Builds</a><a href="historical.html">September archive</a><label class="mono">Theme <select id="theme" class="theme-control" aria-label="Color theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label></header>
 <main class="wrap">
 <section class="hero" aria-label="Headline result">
   <div><p class="eyebrow">OpenTelemetry Collector · upstream main and PR #52063</p><h1>Keep the detectors you need.<br><span>Leave more unused dependencies behind.</span></h1>
@@ -195,7 +381,29 @@
 <div class="scroll" role="region" aria-label="Exact build measurements" tabindex="0"><table><caption>Exact measurements · upstream main and PR implementation at pinned commits</caption><thead><tr><th scope="col">Measured build</th><th scope="col">Modules</th><th scope="col">Packages</th><th scope="col">Binary bytes</th><th scope="col">Size versus upstream all</th></tr></thead><tbody id="metrics"></tbody></table></div>
 <p class="caption">Savings vary by selection. When selected detectors still need the same libraries, reductions can be small or absent. Small binary increases are shown too.</p>
 </section>
-<section class="panel"><div class="section-head"><span class="section-index">02</span><h2>What this PR adds to upstream main</h2></div>
+
+<section class="panel build-explorer" id="explorer" aria-label="Compare Builds">
+<div class="section-head"><span class="section-index">02</span><h2>Compare Builds</h2></div>
+<p>Browse every measured single-detector and combined build. Each selection has an upstream bar and a PR bar. Both use the same detector selection and the pinned build settings.</p>
+<p class="caption">Hover or focus a bar for its measurements and an invitation to inspect it. Click or press Enter to open the categorized module diff below the chart. On touch screens, tap a bar.</p>
+<div class="toolbar" role="group" aria-label="Filter builds">
+<button type="button" class="fbtn" data-build-filter="all" aria-pressed="true">All builds</button>
+<button type="button" class="fbtn" data-build-filter="single" aria-pressed="false">Single detector</button>
+<button type="button" class="fbtn" data-build-filter="combo" aria-pressed="false">Combined builds</button>
+<span class="spacer"></span><span class="seg" role="group" aria-label="Build view"><button type="button" id="build-view-chart" aria-pressed="true">Chart</button><button type="button" id="build-view-table" aria-pressed="false">Table</button></span>
+</div>
+<div class="explorer-controls"><label for="build-metric">Bar measurement <select id="build-metric"><option value="modules">Reachable modules</option><option value="bytes">Collector binary size</option></select></label><span id="build-coverage" class="caption" aria-live="polite"></span></div>
+<div class="chart-card" id="build-chart-view">
+<div id="build-baseline" class="build-baseline"></div>
+<div class="axis"><span>0</span><span id="build-axis"></span></div>
+<div id="build-chart"></div>
+<div class="chart-foot"><span class="key">Solid: retained in this build</span><span class="key"><i class="swatch gone"></i>Pale red: removed versus upstream all</span><span class="key" id="build-unit-note"></span></div>
+</div>
+<div class="chart-card" id="build-table-view" hidden><div class="tbl-scroll" role="region" aria-label="Scrollable build measurements" tabindex="0"><table class="tbl"><caption>All values use the same pinned experiment; each build opens its detailed comparison.</caption><thead><tr><th scope="col">Detectors</th><th scope="col">Measured build</th><th scope="col" class="num">Modules</th><th scope="col" class="num">Packages</th><th scope="col" class="num">Binary bytes</th><th scope="col">Size versus upstream all</th></tr></thead><tbody id="build-table"></tbody></table></div></div>
+<div id="build-detail" hidden></div>
+</section>
+
+<section class="panel"><div class="section-head"><span class="section-index">03</span><h2>What this PR adds to upstream main</h2></div>
 <p>A resource detector adds facts about where telemetry runs, such as a cloud region or host name. Build tags choose which implementations Go compiles. The YAML <code>detectors</code> list chooses which compiled implementations run; omitting a detector from YAML does not remove its code.</p>
 <p>Upstream already provides each detector’s implementation and an omitted version, selected by <code>omit_detector_*</code> tags. This PR reuses those files. It adds <code>remove_all_resourcedetection_detectors</code> plus individual <code>enable_resourcedetection_*_detector</code> tags, so a builder can start empty and name only the required detectors.</p>
 <p>Both tag styles remain supported. An omit tag wins if it conflicts with an enable tag. Without global removal, enable tags do not trim a default build. Starting with global removal also leaves newly added detectors excluded until explicitly enabled.</p>
@@ -213,12 +421,12 @@
 <p><a href="https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/52063">Read PR #52063</a> · <a id="source-readme">Read the measured build instructions and full tag list</a></p>
 </details>
 </section>
-<section class="panel"><div class="section-head"><span class="section-index">03</span><h2>Inspect the dependencies</h2></div>
+<section class="panel"><div class="section-head"><span class="section-index">04</span><h2>Inspect the dependencies</h2></div>
 <p class="muted">A Go module is a versioned dependency containing one or more packages. Counts here cover modules and packages reachable from RDP’s production source. They are not the dependency inventory of the complete Collector executable or a complete software bill of materials.</p>
 <div class="controls"><label for="module-mode">Module list<select id="module-mode"><option value="removed">Removed by PR versus upstream selected</option><option value="unified">Remaining in PR selected</option><option value="optout">Remaining in upstream selected</option><option value="default">Remaining in upstream all</option></select></label><label for="filter">Filter modules<input id="filter" type="search" placeholder="Module path"></label></div>
 <p id="module-count" class="caption" aria-live="polite"></p><pre id="module-list" tabindex="0" aria-label="Matching module paths"></pre>
 </section>
-<section class="panel"><div class="section-head"><span class="section-index">04</span><h2>Reproduce and verify</h2></div>
+<section class="panel"><div class="section-head"><span class="section-index">05</span><h2>Reproduce and verify</h2></div>
 <p>Every measured build uses the same Go and OCB executables, Collector component versions, platform and build flags. OCB is the OpenTelemetry Collector Builder. Exact source revisions, tags and binary checksums are recorded below; the upstream source is a frozen snapshot of main.</p><p id="versions" class="caption"></p><div id="inputs"></div>
 <details id="supplementary"><summary>Supplementary reproducibility controls</summary><p id="parity" class="caption"></p></details>
 <details><summary>PR build with all detectors</summary><p id="pr-baseline" class="caption"></p></details>
@@ -227,6 +435,7 @@
 <footer class="footer">Pinned build-footprint experiment · Darwin/arm64 · Not a runtime-performance benchmark. Linux/amd64 OKE runtime checks are separate evidence. <a href="historical.html">September archive: earlier measurements and implementation</a>.</footer>
 </main>
 <div id="module-tooltip" role="tooltip" hidden></div>
+<div id="build-tip" role="tooltip" hidden></div>
 <script id="comparison-data" type="application/json">COMPARISON_DATA</script>
 <script>
 'use strict';
@@ -280,6 +489,99 @@ document.addEventListener('pointerdown',hideCoach,{once:true});$('target').addEv
 function theme(value){if(value==='system')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=value;}
 try{const value=localStorage.getItem('footprint-theme');if(['system','light','dark'].includes(value))$('theme').value=value;}catch{}
 $('theme').addEventListener('change',()=>{theme($('theme').value);try{localStorage.setItem('footprint-theme',$('theme').value);}catch{}});theme($('theme').value);render();
+  const CAT = {
+    AWS: 'AWS SDK', K8S: 'Kubernetes stack', AZ: 'Azure SDK', GCP: 'Google Cloud',
+    DOCKER: 'Docker', HASHI: 'HashiCorp / Consul', SYS: 'System (gopsutil)',
+    CONTRIB: 'Contrib internal', SHARED: 'Shared libraries', CORE: 'Collector core',
+  };
+  const CAT_ORDER = [CAT.AWS, CAT.K8S, CAT.AZ, CAT.GCP, CAT.DOCKER, CAT.HASHI, CAT.SYS, CAT.CONTRIB, CAT.SHARED, CAT.CORE];
+  const K8S_EXACT = new Set([
+    'github.com/google/gnostic-models', 'github.com/evanphx/json-patch/v5', 'github.com/go-logr/logr',
+    'github.com/golang/groupcache', 'github.com/gregjones/httpcache', 'github.com/peterbourgon/diskv',
+    'github.com/google/gofuzz', 'github.com/munnerz/goautoneg', 'github.com/emicklei/go-restful/v3',
+    'github.com/josharian/intern', 'github.com/mailru/easyjson', 'github.com/moby/spdystream',
+    'gopkg.in/inf.v0', 'github.com/spf13/pflag', 'github.com/x448/float16', 'github.com/fxamacker/cbor/v2',
+  ]);
+  function categorize(p) {
+    if (p === 'github.com/hashicorp/go-version') return CAT.SHARED; // collector-core dep, not Consul residue
+    if (p.startsWith('github.com/open-telemetry/opentelemetry-collector-contrib')) return CAT.CONTRIB;
+    if (p.startsWith('go.opentelemetry.io/')) return CAT.CORE;
+    if (p.startsWith('github.com/aws/') || p.includes('jmespath')) return CAT.AWS;
+    if (p.includes('GoogleCloudPlatform') || p.startsWith('cloud.google.com/') || p.includes('googleapis/gax')) return CAT.GCP;
+    if (p.startsWith('github.com/Azure/') || p.includes('AzureAD') || p.includes('golang-jwt') ||
+        p.includes('kylelemons/godebug') || p.includes('pkg/browser') || p.includes('dimchansky')) return CAT.AZ;
+    if (p.startsWith('k8s.io/') || p.startsWith('sigs.k8s.io/') || p.startsWith('github.com/go-openapi/') || K8S_EXACT.has(p)) return CAT.K8S;
+    if (p.startsWith('github.com/docker/') || p.includes('distribution/reference') || p.includes('opencontainers') ||
+        p.startsWith('github.com/moby/') || p.includes('containerd') || p === 'github.com/pkg/errors') return CAT.DOCKER;
+    if (p.startsWith('github.com/hashicorp/') || p.includes('armon/go-metrics') || p.includes('fatih/color') ||
+        p.startsWith('github.com/mattn/')) return CAT.HASHI;
+    if (/shirou|ebitengine|go-ole|lufia|power-devops|tklauser|yusufpapurcu|shoenig|pro-bing/.test(p)) return CAT.SYS;
+    return CAT.SHARED;
+  }
+  const SDK_CATS = new Set([CAT.AWS, CAT.K8S, CAT.AZ, CAT.GCP, CAT.DOCKER, CAT.HASHI]);
+
+
+// ---------- paired-build explorer ----------
+const explorer={filter:'all',view:'chart',metric:'modules',id:null,strategy:'unified',against:'all',query:''};
+const baselineBuild=data.runs.upstream.report.baseline;
+function explorerRestore(){const q=new URLSearchParams(location.search);
+explorer.filter=['all','single','combo'].includes(q.get('builds'))?q.get('builds'):'all';
+explorer.view=q.get('view')==='table'?'table':'chart';explorer.metric=q.get('metric')==='bytes'?'bytes':'modules';
+explorer.id=data.rows.some(r=>r.id===q.get('inspect'))?q.get('inspect'):null;
+explorer.strategy=q.get('build')==='optout'?'optout':'unified';explorer.against=q.get('against')==='selected'?'selected':'all';explorer.query=q.get('diff')||'';}
+function explorerSave(){const url=new URL(location.href);for(const [key,value] of Object.entries({builds:explorer.filter,view:explorer.view,metric:explorer.metric,inspect:explorer.id,build:explorer.id?explorer.strategy:null,against:explorer.id?explorer.against:null,diff:explorer.id&&explorer.query?explorer.query:null})){if(value)url.searchParams.set(key,value);else url.searchParams.delete(key);}try{history.replaceState(null,'',url);}catch{}}
+function visiblePairs(){return data.rows.filter(row=>explorer.filter==='all'||build(row,'unified').kind===explorer.filter).slice().sort((a,b)=>{const x=build(a,'unified'),y=build(b,'unified'),metric=explorer.metric==='bytes'?'binary_bytes':'module_count';return x[metric]-y[metric]||a.label.localeCompare(b.label);});}
+function hideBuildTip(){$('build-tip').hidden=true;}
+function buildTip(row,strategy,x,y){hideTip();const item=build(row,strategy),tip=$('build-tip');tip.replaceChildren();element('strong',row.label+' · '+names[strategy],tip);
+for(const value of [number(item.module_count)+' reachable modules · '+number(item.package_count)+' packages',mib(item.binary_bytes)+' · '+number(item.binary_bytes)+' bytes',item.detectors.length+' selected detector'+(item.detectors.length===1?'':'s')])element('div',value,tip);
+element('div','Click this bar to see the detailed module-by-module diff.',tip).className='inspect';tip.hidden=false;const rect=tip.getBoundingClientRect();tip.style.left=Math.max(10,Math.min(x+14,innerWidth-rect.width-10))+'px';tip.style.top=Math.max(10,Math.min(y+14,innerHeight-rect.height-10))+'px';}
+function bindBuildTip(node,row,strategy){node.setAttribute('aria-describedby','build-tip');node.addEventListener('pointermove',event=>buildTip(row,strategy,event.clientX,event.clientY));node.addEventListener('pointerleave',hideBuildTip);node.addEventListener('focus',()=>{const r=node.getBoundingClientRect();buildTip(row,strategy,r.left,r.bottom);});node.addEventListener('blur',hideBuildTip);}
+function pairedBar(parent,row,strategy){const item=build(row,strategy),node=element('button',undefined,parent);node.type='button';node.className='bar-row'+(explorer.id===row.id&&explorer.strategy===strategy?' sel':'');node.dataset.build=row.id;node.dataset.strategy=strategy;node.setAttribute('aria-label',row.label+' · '+names[strategy]+': '+item.module_count+' modules. Open detailed module diff.');node.setAttribute('aria-expanded',String(explorer.id===row.id&&explorer.strategy===strategy));node.setAttribute('aria-controls','build-detail');
+element('span',names[strategy],node).className='b-lbl';const track=element('span',undefined,node);track.className='b-track';track.setAttribute('aria-hidden','true');
+const metric=explorer.metric==='bytes'?'binary_bytes':'module_count',fraction=Math.min(100,item[metric]/baselineBuild[metric]*100);const solid=element('span',undefined,track);solid.className='b-fill keep';solid.style.width=fraction+'%';const removed=element('span',undefined,track);removed.className='b-fill removed';removed.style.left=fraction+'%';removed.style.width=(100-fraction)+'%';
+const value=element('span',undefined,node);value.className='b-val';element('span',explorer.metric==='bytes'?mib(item.binary_bytes):item.module_count+' kept · '+(baselineBuild.module_count-item.module_count)+' removed',value).className='b-counts';element('span',explorer.metric==='bytes'?number(item.binary_bytes)+' bytes':mib(item.binary_bytes)+' Collector',value);element('span','View module details →',value).className='inspect';
+bindBuildTip(node,row,strategy);node.addEventListener('click',()=>openBuild(row.id,strategy));}
+function renderExplorerChart(){const chart=$('build-chart');chart.replaceChildren();const base=$('build-baseline');base.replaceChildren();element('strong',names.default,base).className='baseline-label';const track=element('span',undefined,base);track.className='b-track';track.setAttribute('aria-hidden','true');const value=element('span',baselineBuild.module_count+' modules · '+mib(baselineBuild.binary_bytes),base);value.className='baseline-value';
+$('build-axis').textContent=explorer.metric==='bytes'?mib(baselineBuild.binary_bytes)+' · upstream all':baselineBuild.module_count+' modules · upstream all';
+$('build-unit-note').textContent=explorer.metric==='bytes'?'Bar length measures complete minimal Collector bytes.':'Each bar totals '+baselineBuild.module_count+' modules, including the removed segment.';
+const pairs=visiblePairs();$('build-coverage').textContent=pairs.length+' selections · '+pairs.length*2+' measured builds';
+for(const [kind,label] of [['single','Single-detector builds'],['combo','Combined builds']]){const rows=pairs.filter(row=>build(row,'unified').kind===kind);if(!rows.length)continue;element('div',label,chart).className='grp-h';for(const row of rows){const pair=element('div',undefined,chart);pair.className='build-pair';pair.dataset.selection=row.id;element('h3',row.label,pair);pairedBar(pair,row,'optout');pairedBar(pair,row,'unified');const up=build(row,'optout'),pr=build(row,'unified');const delta=up.module_count-pr.module_count;element('p','PR versus upstream selected: '+(delta===0?'same module count':Math.abs(delta)+' '+(delta>0?'fewer':'more')+' modules')+' · '+sizeChange(pr.binary_bytes,up.binary_bytes),pair).className='pair-delta';}}}
+function renderExplorerTable(){const body=$('build-table');body.replaceChildren();const base=element('tr',undefined,body);for(const value of ['All detectors',names.default,number(baselineBuild.module_count),number(baselineBuild.package_count),number(baselineBuild.binary_bytes),'Same size'])element('td',value,base);
+for(const row of visiblePairs())for(const strategy of ['optout','unified']){const b=build(row,strategy),tr=element('tr',undefined,body);tr.dataset.selection=row.id;tr.dataset.strategy=strategy;const label=element('td',undefined,tr),button=element('button',row.label,label);button.type='button';button.className='table-select';button.setAttribute('aria-label','Inspect '+row.label+' · '+names[strategy]);button.addEventListener('click',()=>openBuild(row.id,strategy));bindBuildTip(button,row,strategy);for(const value of [names[strategy],number(b.module_count),number(b.package_count),number(b.binary_bytes),sizeChange(b.binary_bytes,baselineBuild.binary_bytes)])element('td',value,tr);}}
+function syncExplorerControls(){for(const button of document.querySelectorAll('[data-build-filter]'))button.setAttribute('aria-pressed',String(button.dataset.buildFilter===explorer.filter));$('build-view-chart').setAttribute('aria-pressed',String(explorer.view==='chart'));$('build-view-table').setAttribute('aria-pressed',String(explorer.view==='table'));$('build-chart-view').hidden=explorer.view!=='chart';$('build-table-view').hidden=explorer.view!=='table';$('build-metric').value=explorer.metric;}
+function renderExplorer(){syncExplorerControls();renderExplorerChart();renderExplorerTable();renderBuildDetail();}
+function setExplorerView(view){hideBuildTip();explorer.view=view;syncExplorerControls();explorerSave();}
+function closeBuild(){const id=explorer.id,strategy=explorer.strategy;explorer.id=null;explorer.query='';hideBuildTip();renderExplorer();explorerSave();const selector=explorer.view==='chart'?'.bar-row[data-build="'+id+'"][data-strategy="'+strategy+'"]':'#build-table tr[data-selection="'+id+'"][data-strategy="'+strategy+'"] button';const trigger=document.querySelector(selector);if(trigger){trigger.focus({preventScroll:true});trigger.scrollIntoView({block:'center',behavior:'instant'});hideBuildTip();}}
+function openBuild(id,strategy){hideBuildTip();hideTip();explorer.id=id;explorer.strategy=strategy;explorer.query='';if(strategy==='optout')explorer.against='all';renderExplorer();explorerSave();const heading=$('build-detail').querySelector('h3');heading.focus({preventScroll:true});heading.scrollIntoView({block:'start',behavior:'instant'});}
+function countChange(value,reference){const delta=reference-value;return delta===0?'Same count as this baseline':Math.abs(delta)+' '+(delta>0?'fewer':'more')+' versus this baseline';}
+function appendEvidence(parent,label,href){const a=element('a',label,parent);a.href=href;}
+function renderBuildDetail(){const holder=$('build-detail'),row=data.rows.find(r=>r.id===explorer.id);holder.replaceChildren();holder.hidden=!row;if(!row)return;const b=build(row,explorer.strategy),base=explorer.strategy==='unified'&&explorer.against==='selected'?build(row,'optout'):baselineBuild,baseName=base===baselineBuild?names.default:names.optout;
+const card=element('article',undefined,holder);card.className='detail-card';const head=element('div',undefined,card);head.className='detail-head';const heading=element('h3',row.label+' · '+names[explorer.strategy],head);heading.tabIndex=-1;element('span',b.kind==='single'?'single detector':'combined build',head).className='chip kind';element('span','Measured',head).className='chip measured';element('span',undefined,head).className='spacer';const close=element('button','×',head);close.type='button';close.className='xbtn';close.setAttribute('aria-label','Close build detail');close.addEventListener('click',closeBuild);
+const detectors=element('div',undefined,card);detectors.className='det-chips';for(const detector of b.detectors)element('span',detector,detectors).className='chip det';
+const controls=element('div',undefined,card);controls.className='diff-controls';const label=element('label','Compare with ',controls);const baselineSelect=element('select',undefined,label);baselineSelect.id='detail-baseline';baselineSelect.setAttribute('aria-label','Detailed diff baseline');let option=element('option',names.default,baselineSelect);option.value='all';if(explorer.strategy==='unified'){option=element('option',names.optout+' · same detector selection',baselineSelect);option.value='selected';}baselineSelect.value=explorer.strategy==='optout'?'all':explorer.against;baselineSelect.addEventListener('change',()=>{explorer.against=baselineSelect.value;explorer.query='';renderBuildDetail();explorerSave();$('detail-baseline').focus();});
+element('p','All module differences and stat deltas below compare this build with '+baseName+'.',card).className='caption';
+const sdkCount=b.modules.filter(m=>SDK_CATS.has(categorize(m))).length,stats=element('div',undefined,card);stats.className='stat-row';for(const [label,value,sub] of [['Reachable Go modules',number(b.module_count),countChange(b.module_count,base.module_count)],['Reachable Go packages',number(b.package_count),countChange(b.package_count,base.package_count)],['Collector binary size',mib(b.binary_bytes),sizeChange(b.binary_bytes,base.binary_bytes)+' · '+number(b.binary_bytes)+' bytes'],['Provider/platform SDK modules',number(sdkCount),'Display categories, not a dependency audit']]){const tile=element('div',undefined,stats);tile.className='tile';element('span',label,tile).className='t-label';element('span',value,tile).className='t-value';element('span',sub,tile).className='t-sub';}
+const ref=row[explorer.strategy],run=data.runs[ref.run],source=run.manifest.source,tagStr=b.tags.join(','),manifestName=ref.run==='upstream'?'upstream':'unified';
+const cmd=element('div',undefined,card);cmd.className='cmd';element('code','# Use source commit '+source.commit+'\n# Build tags for this target:\n'+tagStr+'\n\n# Run from the RDP module directory for source reachability:\ngo list -mod=readonly -deps -tags=\''+tagStr+'\' .\n\n# Reproduce with the matched runner and explicit pinned tool paths:\npython3 tools/locked_run.py --manifest experiments/unified-tags/'+manifestName+'.json \\\n  --lock experiments/unified-tags/versions.lock.json --source /path/to/contrib \\\n  --targets '+b.id+' --output /path/to/new-run \\\n  --go /path/to/go-1.27.2/bin/go --builder /path/to/ocb-0.163.0-built-with-go-1.27.2',cmd);
+const copy=element('button','Copy build tags',cmd);copy.type='button';copy.className='copybtn';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(tagStr);copy.textContent='Copied';setTimeout(()=>{copy.textContent='Copy build tags';},1500);}catch{copy.textContent='Select the tags above to copy';}});
+const evidence=element('div',undefined,card);evidence.className='evidence-links';appendEvidence(evidence,'Pinned source commit',source.url.replace(/\.git$/,'')+'/commit/'+source.commit);appendEvidence(evidence,'Pinned experiment manifest','https://github.com/oso-team/otelcol-build-footprint/blob/04c5d787980eb7688b0f6eaf9855b0fbb20d2c70/experiments/unified-tags/'+manifestName+'.json');appendEvidence(evidence,'Reproduction instructions','https://github.com/oso-team/otelcol-build-footprint#matched-upstream-and-pr-comparison');appendEvidence(evidence,'Complete measured data','comparison.json');
+const receipt=element('details',undefined,card);element('summary','Binary checksum and build inputs',receipt);element('pre','Source: '+source.commit+'\nBinary SHA-256: '+run.binary_receipts[b.id].sha256+'\nBinary bytes: '+number(b.binary_bytes)+'\nGo '+s.go_version+' · OCB '+s.builder_version+' · '+s.goos+'/'+s.goarch+'\nCGO '+s.cgo_enabled+' · '+s.goflags+' · linker '+s.ldflags,receipt);
+const kept=new Set(b.modules),removed=base.modules.filter(m=>!kept.has(m)),baseSet=new Set(base.modules),remaining=b.modules.filter(m=>baseSet.has(m)),added=b.modules.filter(m=>!baseSet.has(m));
+const dh=element('div',undefined,card);dh.className='diff-head';element('h4','Go module diff',dh);const totals=element('span',undefined,dh);totals.className='diff-legend';element('span','− '+removed.length+' removed',totals).className='rm';element('span','✓ '+remaining.length+' kept',totals).className='kp';if(added.length)element('span','+ '+added.length+' newly reachable',totals).className='kp';const search=element('input',undefined,dh);search.type='search';search.placeholder='Filter modules…';search.setAttribute('aria-label','Filter detailed modules');search.value=explorer.query;
+element('p','Red minus and strike-through: reachable in the baseline, absent here. Green checks: reachable in both. Hover, tap or focus a module for package counts. Categories group module paths for browsing; they do not assert ownership.',card).className='category-note';
+const catCounts={};for(const m of removed){const category=categorize(m);catCounts[category]=(catCounts[category]||0)+1;}const chips=element('div',undefined,card);chips.className='cat-chips';for(const category of CAT_ORDER)if(catCounts[category])element('span',category+': −'+catCounts[category]+' modules',chips).className='chip rmv';
+const count=element('p',undefined,card);count.className='caption diff-counts';count.id='detail-diff-count';count.setAttribute('aria-live','polite');const groups=element('div',undefined,card);groups.className='diff-groups';const byCat={};for(const [list,status] of [[removed,'rm'],[remaining,'kp'],[added,'added']])for(const m of list){const category=categorize(m);if(!byCat[category])byCat[category]={rm:[],kp:[],added:[]};byCat[category][status].push(m);}
+for(const category of CAT_ORDER){const g=byCat[category];if(!g)continue;const group=element('div',undefined,groups);group.className='diff-group';const gh=element('div',undefined,group);gh.className='dg-h';element('span',category,gh);element('span',g.rm.length+' removed · '+g.kp.length+' kept'+(g.added.length?' · '+g.added.length+' new':''),gh).className='counts';const rows=element('div',undefined,group);rows.className='diff-rows';
+for(const status of ['rm','kp','added'])for(const module of g[status].sort()){const line=element('div',undefined,rows);line.className='drow '+(status==='rm'?'rm':'kp');line.dataset.mod=module.toLowerCase();line.tabIndex=0;line.setAttribute('aria-label',module+' · '+(status==='rm'?'removed':status==='kp'?'kept':'newly reachable'));element('span',status==='rm'?'−':status==='kp'?'✓':'+',line).className='sgn';element('code',module,line);const show=(x,y)=>{const tip=$('build-tip');tip.replaceChildren();element('strong',module,tip);element('div',category+' · '+(status==='rm'?'Removed':status==='kp'?'Kept':'Newly reachable'),tip);element('div','Reachable packages: '+(b.module_packages[module]||0)+' selected / '+(base.module_packages[module]||0)+' baseline',tip);tip.hidden=false;const rect=tip.getBoundingClientRect();tip.style.left=Math.max(10,Math.min(x+14,innerWidth-rect.width-10))+'px';tip.style.top=Math.max(10,Math.min(y+14,innerHeight-rect.height-10))+'px';};line.addEventListener('pointermove',e=>show(e.clientX,e.clientY));line.addEventListener('pointerleave',hideBuildTip);const focus=()=>{const rect=line.getBoundingClientRect();show(rect.left,rect.bottom);};line.addEventListener('focus',focus);line.addEventListener('blur',hideBuildTip);line.addEventListener('click',focus);}}
+const apply=()=>{const query=explorer.query.trim().toLowerCase();let shown=0;for(const line of groups.querySelectorAll('.drow')){line.hidden=query&&!line.dataset.mod.includes(query);if(!line.hidden)shown++;}for(const group of groups.querySelectorAll('.diff-group'))group.hidden=!Array.from(group.querySelectorAll('.drow')).some(line=>!line.hidden);count.textContent=shown+' of '+(removed.length+remaining.length+added.length)+' modules shown. Category chips and totals describe the full diff.';};search.addEventListener('input',()=>{explorer.query=search.value;apply();explorerSave();});apply();}
+for(const button of document.querySelectorAll('[data-build-filter]'))button.addEventListener('click',()=>{hideBuildTip();explorer.filter=button.dataset.buildFilter;renderExplorer();explorerSave();});
+$('build-metric').addEventListener('change',()=>{hideBuildTip();explorer.metric=$('build-metric').value;renderExplorerChart();renderExplorerTable();explorerSave();});
+$('build-view-chart').addEventListener('click',()=>setExplorerView('chart'));$('build-view-table').addEventListener('click',()=>setExplorerView('table'));
+document.addEventListener('keydown',event=>{if(event.key==='Escape')hideBuildTip();});window.addEventListener('scroll',hideBuildTip,{passive:true});window.addEventListener('resize',hideBuildTip);
+window.addEventListener('popstate',()=>{explorerRestore();renderExplorer();});
+explorerRestore();renderExplorer();
+if(explorer.id)requestAnimationFrame(()=>{$('build-detail').scrollIntoView({block:'start',behavior:'instant'});});
+
 </script>
 </body>
 </html>

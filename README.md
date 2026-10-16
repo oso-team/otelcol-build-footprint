@@ -85,7 +85,9 @@ A Go module is a versioned dependency containing packages. Module counts here de
 
 Every target uses the same minimal OTLP receiver, resource detection processor and debug exporter. “All detectors” means all RDP implementations, not the full Contrib distribution. Module reachability is not an SBOM, vulnerability result, license determination, or runtime performance measurement. Binary size is not processor-only size.
 
-The grid shows the PR selection versus upstream all detectors. Its squares provide module names and package counts on hover, tap, or keyboard focus. The three-way charts separately show the additional difference versus upstream selected detectors. Detector and module filters are stored in the URL.
+The grid shows the PR selection versus upstream all detectors. Its squares provide module names and package counts on hover, tap, or keyboard focus. The three-way charts separately show the additional difference versus upstream selected detectors. The Compare Builds section shows paired upstream and PR bars for all 41 selections, with the shared all-detector baseline at the top. Hover or focus a bar for an invitation to open its detailed diff.
+
+Each build detail includes detector names, module/package/binary statistics, provider-library categories, exact tags with a copy button, pinned source and manifest links, and the binary checksum. The red/green module diff supports search and package-count details. PR builds can compare against upstream all detectors or upstream with the same detector selection. Inspection, comparison baseline, search, build filters, view and metric are stored in the URL. Detector and module filters are stored in the URL.
 
 ## September archive
 
