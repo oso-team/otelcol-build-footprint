@@ -210,7 +210,7 @@
   .b-fill { position: absolute; inset: 0 auto 0 0; }
   .b-fill.keep { background: var(--accent); border-radius: 0; }
   .b-fill.removed {
-    background: var(--bad-wash);
+    background: color-mix(in srgb, var(--bad) 30%, var(--surface));
   }
   .bar-row .b-val { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 12.5px; font-weight: 600; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; line-height: 1.2; }
   .bar-row .b-counts { white-space: nowrap; }
@@ -322,6 +322,7 @@
   .build-explorer .bar-row .b-lbl {font-size:12.5px;white-space:normal;overflow:visible}
   .build-explorer .bar-row[data-strategy="optout"] .b-fill.keep {background:var(--ink-2)}
   .build-explorer .b-track {display:block}
+  .build-explorer .chart-foot .swatch.gone {background:color-mix(in srgb, var(--bad) 30%, var(--surface));border:0}
   .build-explorer .axis {justify-content:flex-end;padding-left:0}
   .build-explorer .b-val {font-size:12px}
   .build-explorer .b-counts {white-space:normal}

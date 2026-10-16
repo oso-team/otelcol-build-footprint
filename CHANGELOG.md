@@ -2,6 +2,8 @@
 
 ## 2026-10-16
 
+- Darken the removed portions of comparison bars to improve contrast against the page background.
+
 - Remove the removed-segment outline so adjacent bar colors meet without a seam stroke.
 
 - Remove the disconnected zero-axis label and make retained/removed bar segments meet at a straight seam.
