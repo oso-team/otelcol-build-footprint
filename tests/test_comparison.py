@@ -104,5 +104,15 @@ class ComparisonEvidenceTests(unittest.TestCase):
             compare.assemble({'upstream': a, 'unified': b}, self.lock, a['manifest']['source']['commit'])
 
 
+class ComparisonPresentationTests(unittest.TestCase):
+    def test_standalone_comparison_matches_validated_data_and_template(self):
+        report = json.loads((ROOT / "docs/comparison.json").read_text())
+        html = (ROOT / "docs/comparison.html").read_text()
+        payload = html.split('<script id="comparison-data" type="application/json">', 1)[1].split("</script>", 1)[0]
+        self.assertEqual(report, json.loads(payload))
+        expected = (ROOT / "templates/comparison.html").read_text().replace("COMPARISON_DATA", payload)
+        self.assertEqual(expected, html)
+
+
 if __name__ == '__main__':
     unittest.main()

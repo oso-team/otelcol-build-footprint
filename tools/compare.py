@@ -111,7 +111,7 @@ def assemble(runs: dict, settings: dict, upstream_commit: str) -> dict:
               'notes': ['Default means the same minimal OTLP/RDP/debug Collector with every RDP detector compiled.',
                         'Module and package counts measure source reachability from RDP. Binary bytes measure the complete stripped Collector.',
                         'Every strategy uses the recorded Go/OCB/component versions and build settings. Historical measurements are not mixed into this comparison.',
-                        'The unified prototype and merged control are local commits pending review and push.']}
+                        'Exact measured source revisions are pinned; later test and documentation commits do not relabel these measurements.']}
     if UNPUBLISHABLE_TEXT.search(json.dumps(result)):
         raise ValueError('comparison contains a private path, endpoint, or credential marker')
     return result

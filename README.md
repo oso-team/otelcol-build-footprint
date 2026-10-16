@@ -78,7 +78,7 @@ The detector-selection implementation being measured is public. Its four initial
 
 The new experiment compares upstream default, upstream opt-out tags, and the simplified opt-in design on one frozen upstream base. The old implementation is an extra EC2/Oracle parity control. Historical data stays unchanged in `experiment.json` and `docs/index.html`.
 
-`experiments/unified-tags/versions.lock.json` records Go 1.27.2, OCB/Collector 0.163.0, Core stable 1.69.0, SDK 1.47.0 and identical build settings. Each source manifest records its exact commit and tags. The prototype/control commits are local until reviewed and pushed.
+`experiments/unified-tags/versions.lock.json` records Go 1.27.2, OCB/Collector 0.163.0, Core stable 1.69.0, SDK 1.47.0 and identical build settings. Each source manifest records its exact commit and tags. The measured source commits are preserved in the Contrib fork. Later regression-test commits do not change the pinned measurements.
 
 Select the manifest source commit in your existing Contrib checkout, then run:
 
@@ -105,7 +105,7 @@ python3 tools/compare.py \
   --output docs/comparison.json --html docs/comparison.html
 ```
 
-The comparison validates each selected target set with the existing publication contract, requires identical tools, component composition and resolved module versions across runs, and rejects local paths in exported data. The standalone HTML embeds the validated dataset and works offline. Linux/amd64 OKE smoke tests are separate runtime evidence; their binary sizes are not mixed with Darwin/arm64 measurements.
+The comparison validates each selected target set with the existing publication contract, requires identical tools, component composition and resolved module versions across runs, and rejects local paths in exported data. The standalone HTML embeds the validated dataset and works offline. It reuses the original report’s visual styles, supports system/light/dark themes, and stores detector and module filters in the URL. The historical page retains its original dataset and explanation. Linux/amd64 OKE smoke tests are separate runtime evidence; their binary sizes are not mixed with Darwin/arm64 measurements.
 
 ## License and attribution
 

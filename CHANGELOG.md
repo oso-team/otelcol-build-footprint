@@ -2,6 +2,8 @@
 
 ## 2026-10-15
 
+- Reuse the original report design for the matched comparison, with dark mode, module squares, shared filter URLs and the simplified mechanism explanation.
+
 - Add pinned manifests and a guarded runner for the matched unified-detector-tag comparison.
 - Validate source, toolchain, module and binary provenance before exporting cross-strategy results.
 - Add a standalone three-way comparison with module inspection and an old-implementation control.

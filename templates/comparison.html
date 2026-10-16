@@ -1,35 +1,194 @@
 <!doctype html>
 <html lang="en">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Resource detector build comparison</title>
+<meta name="description" content="Matched measurements of default, opt-out and opt-in OpenTelemetry Collector resource-detector builds.">
+<link rel="icon" href="data:,">
+<title>Resource Detector Build Comparison</title>
 <style>
-:root{font:16px/1.5 system-ui,sans-serif;color:#182536;background:#f7f8fa}body{max-width:1120px;margin:auto;padding:36px 24px}h1{font-size:2.4rem;line-height:1.15;margin-bottom:12px}h2{font-size:1.35rem;margin-top:32px}p{max-width:85ch}.muted{color:#546477}.panel{background:white;border:1px solid #dbe1e9;border-radius:10px;padding:22px;margin:20px 0}select,input,button{font:inherit;padding:7px;border:1px solid #9aa8b8;border-radius:5px;background:white}label{display:inline-block;margin-right:18px}table{border-collapse:collapse;width:100%}th,td{padding:10px 8px;text-align:left;border-bottom:1px solid #e4e8ee;font-variant-numeric:tabular-nums}th{font-size:.85rem;color:#546477}pre,code{font:13px/1.55 ui-monospace,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f5f7fa;padding:14px;border-radius:6px;max-height:340px;overflow:auto}.charts{display:grid;grid-template-columns:1fr 1fr;gap:32px}.barrow{margin:16px 0}.barrow span{display:block;font-size:.88rem}.track{height:16px;border-radius:3px;background:#edf1f6;margin:4px 0}.bar{height:100%;border-radius:3px}.default{background:#3974b9}.optout{background:#be711b}.unified{background:#25876f}.value{font-variant-numeric:tabular-nums;font-weight:600}.pill{display:inline-block;font-size:.78rem;border:1px solid #c7d0dc;padding:2px 8px;border-radius:15px}a{color:#235d9d}.scroll{overflow:auto}details{margin:12px 0}summary{cursor:pointer;font-weight:600}@media(max-width:700px){.charts{grid-template-columns:1fr}body{padding:20px 14px}h1{font-size:1.9rem}}
+
+  /* ---------- tokens ---------- */
+  :root {
+    color-scheme: light dark;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #65635e;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --accent: #2a78d6;
+    --accent-ink: #1c5cab;
+    --accent-soft: rgba(42, 120, 214, 0.12);
+    --dim-bar: #c3c2b7;
+    --good: #006300;
+    --good-wash: rgba(12, 163, 12, 0.07);
+    --bad: #b93434;
+    --bad-wash: rgba(208, 59, 59, 0.07);
+    --warn-chip-bg: #fab219;
+    --warn-chip-ink: #3b2a00;
+    --code-bg: #f1f0ec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --accent: #3987e5;
+      --accent-ink: #6da7ec;
+      --accent-soft: rgba(57, 135, 229, 0.16);
+      --dim-bar: #52514e;
+      --good: #0ca30c;
+      --good-wash: rgba(12, 163, 12, 0.10);
+      --bad: #e66767;
+      --bad-wash: rgba(230, 103, 103, 0.09);
+      --warn-chip-bg: #fab219;
+      --warn-chip-ink: #3b2a00;
+      --code-bg: #232322;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+    --muted: #898781; --grid: #2c2c2a; --baseline: #383835;
+    --border: rgba(255,255,255,0.10);
+    --accent: #3987e5; --accent-ink: #6da7ec; --accent-soft: rgba(57,135,229,0.16);
+    --dim-bar: #52514e; --good: #0ca30c; --good-wash: rgba(12,163,12,0.10);
+    --bad: #e66767; --bad-wash: rgba(230,103,103,0.09);
+    --code-bg: #232322;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e;
+    --muted: #65635e; --grid: #e1e0d9; --baseline: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --accent: #2a78d6; --accent-ink: #1c5cab; --accent-soft: rgba(42,120,214,0.12);
+    --dim-bar: #c3c2b7; --good: #006300; --good-wash: rgba(12,163,12,0.07);
+    --bad: #b93434; --bad-wash: rgba(208,59,59,0.07);
+    --code-bg: #f1f0ec;
+  }
+
+  /* ---------- base ---------- */
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  code, .mono {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 0.92em;
+  }
+  a { color: var(--accent-ink); }
+  button { font: inherit; color: inherit; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+
+  /* ---------- header ---------- */
+  .top {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 14px 24px; border-bottom: 1px solid var(--grid);
+  }
+  .top .repo { color: var(--ink-2); font-size: 13px; }
+  .top .spacer { flex: 1; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+    border: 1px solid var(--border); color: var(--ink-2); white-space: nowrap;
+  }
+  .chip.measured { color: var(--accent-ink); border-color: var(--accent); }
+  .chip.kind { text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; }
+  .top a { font-size: 13px; }
+
+
+  .hero {display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;padding:44px 0 32px}
+  .eyebrow,.section-index {font:12px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .hero h1 {font-size:36px;line-height:1.13;margin:14px 0}
+  .hero p {max-width:65ch;color:var(--ink-2)}
+  .hero h1 span {color:var(--accent-ink)}
+  .selector {display:flex;flex-direction:column;gap:8px;margin:22px 0 14px;font-weight:600}
+  select,input,button {font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--grid);border-radius:6px;min-height:44px;padding:9px 12px;max-width:100%}
+  select,input {width:100%} .theme-control {width:auto;min-height:36px;font-size:12px}
+  .result-card {border:1px solid var(--border);border-radius:10px;padding:24px;background:var(--surface)}
+  .result-label {font-size:14px;font-weight:600;margin-bottom:14px}
+  .unit-grid {display:grid;grid-template-columns:repeat(16,1fr);gap:3px;margin:16px 0}
+  .cell {aspect-ratio:1;background:var(--accent);border-radius:2px}
+  .cell.gone {background:var(--bad-wash);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bad) 45%,transparent)}
+  .unit-legend {display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--ink-2)}
+  .swatch {display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;background:var(--accent)}
+  .swatch.gone {background:var(--bad-wash);border:1px solid var(--bad)}
+  .kpis {display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:0 0 36px}
+  .tile {border:1px solid var(--border);background:var(--surface);border-radius:10px;padding:14px 16px}
+  .tile .t-label {display:block;font-size:12px;color:var(--ink-2)}
+  .tile .t-value {display:block;font-size:27px;font-weight:650;line-height:1.3;font-variant-numeric:tabular-nums}
+  .tile .t-sub {display:block;font-size:12px;color:var(--muted)}
+  .panel {padding:28px 0;border-top:1px solid var(--grid);scroll-margin-top:20px}
+  .section-head {display:flex;align-items:baseline;gap:12px;margin-bottom:16px}
+  .section-head h2 {font-size:23px;line-height:1.2}
+  .muted,.caption {color:var(--muted);font-size:13px}
+  .charts {display:grid;grid-template-columns:1fr 1fr;gap:36px;margin:24px 0}
+  .charts h3 {font-size:14px;margin-bottom:16px}
+  .barrow {display:grid;grid-template-columns:1fr auto;gap:6px 12px;margin:16px 0;font-size:13px}
+  .barrow .track {grid-column:1/-1;height:16px;background:var(--grid);border-radius:0 4px 4px 0}
+  .bar {height:100%;border-radius:0 4px 4px 0}.default{background:var(--dim-bar)}.optout{background:var(--ink-2)}.unified{background:var(--accent)}
+  .value {font-weight:650;font-variant-numeric:tabular-nums}
+  .scroll {overflow-x:auto}
+  table {border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+  caption {text-align:left;margin-bottom:10px;color:var(--muted)}
+  th,td {padding:12px 10px;border-bottom:1px solid var(--grid);text-align:right;white-space:nowrap}
+  th:first-child,td:first-child {text-align:left}th{font-size:12px;color:var(--muted);font-weight:600}
+  tr[data-strategy="unified"] {background:var(--accent-soft)}
+  .controls {display:grid;grid-template-columns:2fr 1fr;gap:20px}.controls label{display:flex;flex-direction:column;gap:8px;font-size:13px}
+  pre {white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.7 ui-monospace,monospace;background:var(--code-bg);border:1px solid var(--border);padding:16px;border-radius:8px;max-height:360px;overflow:auto}
+  details {margin:14px 0} summary {cursor:pointer;font-size:13px;font-weight:600;padding:8px 0}
+  .mechanism {display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:20px 0}.mechanism article{border-left:2px solid var(--grid);padding-left:16px}.mechanism article:last-child{border-color:var(--accent)}
+  .mechanism h3{font-size:14px}.mechanism p{font-size:13px;color:var(--ink-2)}
+  .footer {border-top:1px solid var(--grid);margin-top:24px;padding:24px 0 40px;color:var(--muted);font-size:12px}
+  @media(max-width:700px){.wrap{padding:0 18px}.top{padding:12px 18px}.hero{grid-template-columns:1fr;gap:20px;padding-top:28px}.hero h1{font-size:30px}.charts,.controls,.mechanism{grid-template-columns:1fr;gap:16px}.kpis{gap:8px}.tile{padding:12px 10px}.tile .t-value{font-size:23px}.result-card{padding:18px}.section-head h2{font-size:21px}.top .repo{font-size:11px;overflow-wrap:anywhere}.barrow{font-size:12px}}
 </style>
-<header>
-<span class="pill">Matched source and toolchain experiment</span>
-<h1>Resource detector build comparison</h1>
-<p>Compare the same minimal Collector with every detector, upstream’s opt-out tags, and the simplified opt-in design. Inspect the dependencies that remain and the exact inputs used.</p>
-<p id="versions" class="muted"></p>
-<p class="muted">The prototype and merged control are local commits pending review and push. These results are separate from the historical report.</p>
-</header>
-<main>
-<section class="panel" aria-label="Build comparison">
-<label for="target">Detector selection <select id="target"></select></label>
-<p id="coverage" class="muted"></p>
-<div class="charts"><div><h2>Reachable modules</h2><div id="module-bars"></div></div><div><h2>Collector binary size</h2><div id="binary-bars"></div></div></div>
-<div class="scroll"><table><thead><tr><th>Build strategy</th><th>Modules</th><th>Packages</th><th>Binary bytes</th><th>Smaller than default</th></tr></thead><tbody id="metrics"></tbody></table></div>
-<p id="parity"></p>
+</head>
+<body>
+<header class="wrap top"><span class="repo mono">otelcol-build-footprint / resource detection</span><span class="spacer"></span><a href="index.html">Historical report</a><label class="mono">Theme <select id="theme" class="theme-control" aria-label="Color theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label></header>
+<main class="wrap">
+<section class="hero" aria-label="Headline result">
+  <div><p class="eyebrow">OpenTelemetry Collector · matched build experiment</p><h1>The same small build.<br><span>A simpler detector design.</span></h1>
+  <p>The opt-in design builds on upstream’s existing detector stubs. Compare its dependency and binary footprint with the default build and upstream’s opt-out tags.</p>
+  <label class="selector" for="target">Choose a detector selection<select id="target"></select></label>
+  <p id="coverage" class="caption"></p></div>
+  <div class="result-card"><div id="result-label" class="result-label"></div><div id="unit-grid" class="unit-grid" role="img"></div><div class="unit-legend"><span><i class="swatch"></i>Retained</span><span><i class="swatch gone"></i>Removed versus default</span></div><p class="caption">One square represents one reachable Go module. This is source reachability, not a complete software bill of materials.</p></div>
 </section>
-<section class="panel"><h2>Inspect dependencies</h2>
-<label for="module-mode">Module list <select id="module-mode"><option value="removed">Removed by unified versus upstream opt-out</option><option value="unified">Remaining in unified</option><option value="optout">Remaining in upstream opt-out</option><option value="default">Remaining in default</option></select></label>
-<label for="filter">Filter <input id="filter" type="search" placeholder="Module path"></label>
-<p id="module-count" class="muted" aria-live="polite"></p><pre id="module-list"></pre>
+<div class="kpis" aria-live="polite"><div class="tile"><span class="t-label">Opt-in modules</span><span class="t-value" id="kpi-modules"></span><span class="t-sub" id="kpi-modules-sub"></span></div><div class="tile"><span class="t-label">Opt-in Collector size</span><span class="t-value" id="kpi-size"></span><span class="t-sub">Complete stripped binary</span></div><div class="tile"><span class="t-label">Size versus opt-out</span><span class="t-value" id="kpi-saving"></span><span class="t-sub" id="kpi-saving-sub"></span></div></div>
+<section class="panel" aria-label="Build comparison"><div class="section-head"><span class="section-index">01</span><h2>Three ways to select detectors</h2></div>
+<p class="muted">All three strategies use the same minimal OTLP receiver → resource detection → debug exporter composition. “Default” includes every RDP detector; it is not the full Contrib distribution.</p>
+<div class="charts"><div><h3>Reachable Go modules</h3><div id="module-bars"></div></div><div><h3>Collector binary size</h3><div id="binary-bars"></div></div></div>
+<div class="scroll" role="region" aria-label="Exact build measurements" tabindex="0"><table><caption>Exact measurements for the selected detectors</caption><thead><tr><th scope="col">Build strategy</th><th scope="col">Modules</th><th scope="col">Packages</th><th scope="col">Binary bytes</th><th scope="col">Smaller than default</th></tr></thead><tbody id="metrics"></tbody></table></div><p id="parity" class="caption"></p>
 </section>
-<section class="panel"><h2>Reproduce and verify</h2><p>Every strategy uses the same Go, OCB, Collector dependencies, platform and build flags. Source SHAs differ only where the implementation under test differs. Version checks run before and after each phase and verify the metadata embedded in every binary.</p><div id="inputs"></div>
-<p><a href="comparison.json">Download complete comparison data</a> · <a href="index.html">Historical experiment</a></p>
-<ul id="notes"></ul>
+<section class="panel"><div class="section-head"><span class="section-index">02</span><h2>One mechanism, two selection styles</h2></div>
+<div class="mechanism"><article><h3>Default: include everything</h3><p>No detector tags. Existing configurations and default behavior stay available.</p></article><article><h3>Opt-out: subtract detectors</h3><p>Existing <code>omit_detector_*</code> tags select upstream’s omitted implementations. Configuration imports can still retain SDK dependencies.</p></article><article><h3>Opt-in: keep what you need</h3><p>Global remove-all plus individual enable tags use those same implementation/stub files. Three targeted dependency fixes keep unused SDKs out.</p></article></div>
+<p class="muted">Both tag styles remain supported. Omit wins when enable and omit conflict. Typed configuration stays in each detector package; the separate registration layer and detector config subpackages are no longer needed.</p>
+<p class="caption">The measured prototype changes 100 files versus the earlier proposal’s 196, against the same upstream base. The landing update adds one regression-test file. The rebuilt Oracle and EC2 controls retain identical module sets and binary sizes. Size savings vary by selection; small increases are shown as measured.</p>
 </section>
+<section class="panel"><div class="section-head"><span class="section-index">03</span><h2>Inspect the dependencies</h2></div>
+<div class="controls"><label for="module-mode">Module list<select id="module-mode"><option value="removed">Removed by opt-in versus upstream opt-out</option><option value="unified">Remaining in opt-in</option><option value="optout">Remaining in upstream opt-out</option><option value="default">Remaining in default</option></select></label><label for="filter">Filter modules<input id="filter" type="search" placeholder="Module path"></label></div>
+<p id="module-count" class="caption" aria-live="polite"></p><pre id="module-list" tabindex="0" aria-label="Matching module paths"></pre>
+</section>
+<section class="panel"><div class="section-head"><span class="section-index">04</span><h2>Reproduce and verify</h2></div>
+<p>Every strategy uses the same Go, OCB, Collector dependencies, platform and build flags. Exact source revisions, tags and binary checksums are recorded below. These are pinned measurements; later test and documentation changes do not relabel them.</p><p id="versions" class="caption"></p><div id="inputs"></div>
+<p><a href="comparison.json">Download the complete comparison data</a> · <a href="https://github.com/oso-team/otelcol-build-footprint#matched-unified-tag-comparison">Reproduction instructions</a> · <a href="https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/52063">Proposal and review</a></p><ul id="notes" class="caption"></ul>
+</section>
+<footer class="footer">Measured build footprint · Darwin/arm64 · Linux/amd64 OKE runtime checks are separate evidence. Historical September measurements remain in the <a href="index.html">original report</a>.</footer>
 </main>
 <script id="comparison-data" type="application/json">COMPARISON_DATA</script>
 <script>
@@ -39,11 +198,14 @@ const $=id=>document.getElementById(id), names={default:'Default: all detectors'
 const entries=Object.fromEntries(Object.entries(data.runs).map(([key,run])=>[key,Object.fromEntries([run.report.baseline,...run.report.builds].map(build=>[build.id,build]))]));
 const number=value=>value.toLocaleString('en-US'), mib=value=>(value/1048576).toFixed(2)+' MiB';
 function element(tag,text,parent){const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(parent)parent.appendChild(node);return node;}
+function restore(){const state=new URLSearchParams(location.search);if(data.rows.some(row=>row.id===state.get('target')))$('target').value=state.get('target');if(['removed','unified','optout','default'].includes(state.get('modules')))$('module-mode').value=state.get('modules');$('filter').value=state.get('filter')||'';}
+function save(){const url=new URL(location.href);url.searchParams.set('target',$('target').value);url.searchParams.set('modules',$('module-mode').value);if($('filter').value)url.searchParams.set('filter',$('filter').value);else url.searchParams.delete('filter');try{history.replaceState(null,'',url);}catch{}}
 for(const row of data.rows){const option=element('option',row.label,$('target'));option.value=row.id;}
 if(data.rows.some(row=>row.id==='oraclecloud'))$('target').value='oraclecloud';
+restore();
 const s=data.settings;
 $('versions').textContent=`Go ${s.go_version} · OCB ${s.builder_version} · Collector ${s.collector_experimental} / ${s.collector_stable} · ${s.goos}/${s.goarch} · CGO ${s.cgo_enabled} · ${s.goflags} · linker ${s.ldflags}`;
-$('coverage').textContent=`${data.rows.length} measured detector selections. Default means all RDP detectors in the same OTLP → RDP → debug Collector.`;
+$('coverage').textContent=`${data.rows.length} measured detector selections. Oracle and EC2 also have rebuilt controls of the earlier implementation.`;
 for(const note of data.notes)element('li',note,$('notes'));
 function selected(){return data.rows.find(row=>row.id===$('target').value);}
 function build(row,strategy){const ref=row[strategy];return entries[ref.run][ref.id];}
@@ -52,11 +214,21 @@ if(mode==='removed'){const kept=new Set(build(row,'unified').modules);list=build
 const filtered=list.filter(name=>name.toLowerCase().includes($('filter').value.toLowerCase()));
 $('module-count').textContent=`${filtered.length} of ${list.length} modules shown`;$('module-list').textContent=filtered.join('\n')||'No matching modules.';}
 function render(){const row=selected(),keys=['default','optout','unified'];$('metrics').replaceChildren();$('inputs').replaceChildren();
-for(const [id,metric,format] of [['module-bars','module_count',number],['binary-bars','binary_bytes',mib]]){const parent=$(id);parent.replaceChildren();const max=Math.max(...keys.map(key=>build(row,key)[metric]));for(const key of keys){const item=element('div',undefined,parent);item.className='barrow';element('span',names[key],item);const track=element('div',undefined,item);track.className='track';track.setAttribute('aria-hidden','true');const bar=element('div',undefined,track);bar.className='bar '+key;bar.style.width=(100*build(row,key)[metric]/max)+'%';element('span',format(build(row,key)[metric]),item).className='value';}}
-for(const key of keys){const item=build(row,key),tr=element('tr',undefined,$('metrics'));for(const value of [names[key],number(item.module_count),number(item.package_count),number(item.binary_bytes),(100*(1-item.binary_bytes/build(row,'default').binary_bytes)).toFixed(1)+'%'])element('td',value,tr);
-const detail=element('details',undefined,$('inputs'));element('summary',names[key],detail);const run=data.runs[row[key].run];element('pre',`Source: ${run.manifest.source.commit}\nTags: ${item.tags.join(',')||'(none)'}\nBinary SHA-256: ${run.binary_receipts[item.id].sha256}`,detail);}
-if(row.control){const control=build(row,'control'),current=build(row,'unified'),sameModules=JSON.stringify(control.modules)===JSON.stringify(current.modules);$('parity').textContent=`Old implementation control: ${control.module_count} modules, ${number(control.binary_bytes)} bytes. Unified: ${sameModules?'identical module set':'different module set'}; binary size difference ${number(current.binary_bytes-control.binary_bytes)} bytes.`;}else $('parity').textContent='No old-implementation control was measured for this selection.';
+const current=build(row,'unified'),base=build(row,'default'),optout=build(row,'optout');
+$('result-label').textContent=`${row.label}: ${current.module_count} of ${base.module_count} modules retained`;
+$('unit-grid').replaceChildren();$('unit-grid').setAttribute('aria-label',`${current.module_count} retained modules; ${base.module_count-current.module_count} removed versus default`);
+for(let index=0;index<base.module_count;index++){const cell=element('span',undefined,$('unit-grid'));cell.className='cell'+(index>=current.module_count?' gone':'');cell.setAttribute('aria-hidden','true');}
+$('kpi-modules').textContent=number(current.module_count);$('kpi-modules-sub').textContent=`${base.module_count-current.module_count} fewer than default`;
+$('kpi-size').textContent=mib(current.binary_bytes);const saving=100*(1-current.binary_bytes/optout.binary_bytes);$('kpi-saving').textContent=Math.abs(saving).toFixed(1)+'%';$('kpi-saving-sub').textContent=saving>=0?'Smaller than upstream opt-out':'Larger than upstream opt-out';
+for(const [id,metric,format] of [['module-bars','module_count',number],['binary-bars','binary_bytes',mib]]){const parent=$(id);parent.replaceChildren();const max=Math.max(...keys.map(key=>build(row,key)[metric]));for(const key of keys){const item=element('div',undefined,parent);item.className='barrow';element('span',names[key],item);element('span',format(build(row,key)[metric]),item).className='value';const track=element('div',undefined,item);track.className='track';track.setAttribute('aria-hidden','true');const bar=element('div',undefined,track);bar.className='bar '+key;bar.style.width=(100*build(row,key)[metric]/max)+'%';}}
+for(const key of keys){const item=build(row,key),tr=element('tr',undefined,$('metrics'));tr.dataset.strategy=key;for(const value of [names[key],number(item.module_count),number(item.package_count),number(item.binary_bytes),(100*(1-item.binary_bytes/base.binary_bytes)).toFixed(1)+'%'])element('td',value,tr);
+const detail=element('details',undefined,$('inputs'));element('summary',names[key],detail);const run=data.runs[row[key].run];const link=element('a','View measured source on GitHub',detail);link.href=run.manifest.source.url.replace(/\.git$/,'')+'/commit/'+run.manifest.source.commit;element('pre',`Source: ${run.manifest.source.commit}\nTags: ${item.tags.join(',')||'(none)'}\nBinary SHA-256: ${run.binary_receipts[item.id].sha256}`,detail);}
+if(row.control){const control=build(row,'control'),sameModules=JSON.stringify(control.modules)===JSON.stringify(current.modules);$('parity').textContent=`Earlier implementation control: ${control.module_count} modules, ${number(control.binary_bytes)} bytes. Simplified: ${sameModules?'identical module set':'different module set'}; binary size difference ${number(current.binary_bytes-control.binary_bytes)} bytes.`;}else $('parity').textContent='No earlier-implementation control was measured for this selection.';
 modules();}
-$('target').addEventListener('change',render);$('module-mode').addEventListener('change',modules);$('filter').addEventListener('input',modules);render();
+$('target').addEventListener('change',()=>{render();save();});$('module-mode').addEventListener('change',()=>{modules();save();});$('filter').addEventListener('input',()=>{modules();save();});window.addEventListener('popstate',()=>{restore();render();});
+function theme(value){if(value==='system')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=value;}
+try{const value=localStorage.getItem('footprint-theme');if(['system','light','dark'].includes(value))$('theme').value=value;}catch{}
+$('theme').addEventListener('change',()=>{theme($('theme').value);try{localStorage.setItem('footprint-theme',$('theme').value);}catch{}});theme($('theme').value);render();
 </script>
+</body>
 </html>
