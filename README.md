@@ -1,88 +1,47 @@
 # Collector build footprint
 
-Reproducible OpenTelemetry Collector build comparisons showing how component choices affect dependencies and binary size.
+Reproducible measurements of OpenTelemetry Collector dependencies and binary size.
 
-The first experiment compares resource-detection processor builds. A default build includes every detector. Other builds select one detector or a commonly used group through Go build tags. The [interactive report](https://oso-team.github.io/otelcol-build-footprint/) shows module and binary differences for each choice. It benchmarks the public [`rdp-module-split-v4` proposal branch](https://github.com/oso-team/opentelemetry-collector-contrib/tree/rdp-module-split-v4) at an exact commit, before the proposed detector changes are released upstream.
+The [current interactive report](https://oso-team.github.io/otelcol-build-footprint/) compares a pinned upstream main build with [PR #52063](https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/52063). It measures all detectors, upstream's selected detectors, and the PR's same selected detectors. The [comparison URL](https://oso-team.github.io/otelcol-build-footprint/comparison.html) serves the same report. Both work offline.
 
-The report UI builds on the [previously published resource-detector report](https://oso-team.github.io/opentelemetry-collector-contrib/). The runner uses Python's standard library, Git, Go, and the [OpenTelemetry Collector Builder (OCB)](https://opentelemetry.io/docs/collector/extend/ocb/). The source under test is a pinned commit of the [Contrib fork](https://github.com/oso-team/opentelemetry-collector-contrib).
+A resource detector adds information about where telemetry runs, such as a cloud region or host name. Build tags choose which implementations Go compiles. YAML chooses which compiled detectors run. Selecting fewer detectors in YAML does not remove the other implementations from the executable.
 
-## Current report data
+## What the comparison establishes
 
-[`docs/results.json`](docs/results.json) was produced by this repository's runner on 2026-09-28. It covers a default build and 41 detector selections at commit [`a5d5f6a7f795bbf53e45ef3a9a2291555c5c17b4`](https://github.com/oso-team/opentelemetry-collector-contrib/commit/a5d5f6a7f795bbf53e45ef3a9a2291555c5c17b4), on `darwin/arm64` with Go `1.26.4` and OCB `v0.161.0`. Its provenance is in the JSON. The [original report](https://oso-team.github.io/opentelemetry-collector-contrib/) preserves the earlier measurements at commit `136f367d26fd730fcfdad620be6387e57307c14c`.
+Upstream already supports omitting detector implementations with build tags. The PR builds on that implementation/omitted-file pattern. It adds a global remove-all tag and individual enable tags, while retaining the existing omit tags.
 
-The 42 Collector binaries were built and measured from a clean public checkout of the branch. The runner also recorded reachable module inventories, package counts, and portable OCB manifests. The default build measured 186 reachable modules and 108,223,826 binary bytes; the GCP-only build measured 76 reachable modules and 47,058,562 binary bytes.
+The additional dependency reduction comes from removing paths through always-compiled configuration: Kubernetes connection types, GCP resource helpers, and EC2 retry defaults. Enable tags and omit tags are selection mechanisms. Their syntax alone does not explain the measured reduction.
 
-The report is a standalone HTML file with embedded CSS, JavaScript, and a measured data snapshot. Open the [published report](https://oso-team.github.io/otelcol-build-footprint/), open `docs/index.html` directly, or serve `docs/` over HTTP (for example, `python3 -m http.server 8000 --directory docs`) and open `http://localhost:8000`. GitHub Pages serves `docs/` from `main`.
+The report uses these build labels:
 
-## Reproduce the historical experiment
-
-This section reproduces the historical September dataset. The project Go pin now selects the new comparison toolchain; pass an explicit Go 1.26.4 executable for this historical run.
-
-Prerequisites: Python 3.10 or newer, Git, Go `1.26.4`, and released OCB `v0.161.0`. `experiment.json` pins the toolchain, public source commit, Collector component module versions, platform, and 42 build targets. The branch's core module dependencies use its exact public `v0.161.1` pseudo-version; the resource-detection processor is replaced with the local public checkout. This repository itself has no Python or JavaScript package dependencies.
-
-1. Obtain a clean checkout of the pinned public source:
-
-   ```sh
-   git clone --branch rdp-module-split-v4 --single-branch https://github.com/oso-team/opentelemetry-collector-contrib.git /path/to/public-contrib
-   git -C /path/to/public-contrib checkout --detach a5d5f6a7f795bbf53e45ef3a9a2291555c5c17b4
-   ```
-
-2. Install the pinned public OCB release. For example, run `go install go.opentelemetry.io/collector/cmd/builder@v0.161.0`. Check that `builder version` prints `ocb version v0.161.0` and `go version` prints `go1.26.4`.
-
-3. Run a small comparison first:
-
-   ```sh
-   python3 tools/footprint.py --source /path/to/public-contrib --targets gcp,oraclecloud
-   ```
-
-   Use `--targets all` for the complete matrix. The baseline is always included. If the correct Go binary is not first on `PATH`, pass `--go /path/to/go`. If OCB is not named `builder`, pass `--builder /path/to/builder`. To measure source reachability without producing binaries, use `--no-build`.
-
-4. Inspect `.runs/latest/results.json` and the portable builder manifests in `.runs/latest/evidence/`. The generated builds and raw local paths remain ignored under `.runs/`. The runner rejects a changed source commit, a dirty checkout, a mismatched tool version, or a failed build. It writes a result only after all selected targets succeed.
-
-5. Validate a complete measured run, then explicitly update the Pages dataset and the HTML's offline snapshot:
-
-   ```sh
-   python3 tools/publish.py .runs/latest/results.json
-   python3 tools/publish.py .runs/latest/results.json --write
-   ```
-
-   `publish.py` checks the source commit, build IDs, inventories, and binary measurements. Review the resulting diff before publishing.
-
-## Measurement definitions
-
-| Measure | Scope | How it is collected |
-| --- | --- | --- |
-| Reachable packages | Resource-detection processor | `go list -deps` under the selected build tags, excluding Go standard-library packages |
-| Reachable modules | Resource-detection processor | Distinct module paths that own those packages |
-| Packages per module | Resource-detection processor | Count of reachable packages owned by each module under that build's tags |
-| Binary size | Complete minimal Collector | Byte size of the OCB-built executable with `-s -w` linker flags |
-| Binary metadata | Complete minimal Collector | `go version -m` output, stored as portable evidence |
-
-The runner builds the same receiver, processor, and exporter for every target. Only detector tags change. Compare results within one source revision, platform, Go toolchain, OCB version, and build configuration. The report's area labels group module paths by naming rules to aid browsing; they are not ownership or license classifications. Module reachability is not an SBOM, vulnerability result, license determination, or a runtime performance measurement. Binary size is not processor-only size.
-
-The detector-selection implementation being measured is public. Its four initial commits [separate Kubernetes configuration types](https://github.com/oso-team/opentelemetry-collector-contrib/commit/653d733c1f), [move the GCP metadata helper](https://github.com/oso-team/opentelemetry-collector-contrib/commit/d76640ec42), [place detector registration behind build tags](https://github.com/oso-team/opentelemetry-collector-contrib/commit/a5fdf9cfca), and [keep detector configuration imports light](https://github.com/oso-team/opentelemetry-collector-contrib/commit/136f367d26). The pinned branch commit includes subsequent upstream merges and two more Azure detectors. Re-run the benchmark against a new pinned commit when the 0.162.0 core and Contrib releases are both available.
-
-## Repository layout
-
-| Path | Purpose |
+| Build | Source and selection |
 | --- | --- |
-| `experiment.json` | Pinned public source, build configuration, and target matrix |
-| `tools/footprint.py` | Build and measurement runner |
-| `tools/publish.py` | Publication validation and dataset update |
-| `docs/` | Dependency-free interactive report and published result snapshot |
-| `tests/` | Data-contract and publication checks |
+| Upstream main · all detectors | Pinned upstream source without detector tags |
+| Upstream main · selected detectors | Same upstream source with existing omit tags |
+| PR #52063 · selected detectors | Pinned PR implementation with the same selected detector implementations |
 
-## Matched unified-tag comparison
+The comparison measures the combined changes. It does not separately quantify the contribution of each dependency fix. Some selections still require the same libraries, and reductions can be small or absent, and some binaries are slightly larger. Exact values and small increases remain visible.
 
-[Open the standalone three-way report](docs/comparison.html) or inspect [the measured dataset](docs/comparison.json).
+## Current measured data
 
-The new experiment compares upstream default, upstream opt-out tags, and the simplified opt-in design on one frozen upstream base. The old implementation is an extra EC2/Oracle parity control. Historical data stays unchanged in `experiment.json` and `docs/index.html`.
+[docs/comparison.json](docs/comparison.json) records 41 matched detector selections. The source commits are:
 
-`experiments/unified-tags/versions.lock.json` records Go 1.27.2, OCB/Collector 0.163.0, Core stable 1.69.0, SDK 1.47.0 and identical build settings. Each source manifest records its exact commit and tags. The measured source commits are preserved in the Contrib fork. Later regression-test commits do not change the pinned measurements.
+| Source | Measured commit |
+| --- | --- |
+| Upstream main snapshot | cd37ea915187182b8c2270d512e3c4d805780d3f |
+| PR implementation | 1df29b559af87d5a58fb29253f73917ef278ed26 |
 
-Select the manifest source commit in your existing Contrib checkout, then run:
+These are pinned measurements, not live branch heads. Later test and documentation changes do not relabel them. Additional archived-source controls for EC2 and Oracle remain in the raw data and supplementary evidence.
 
-```sh
+[experiments/unified-tags/versions.lock.json](experiments/unified-tags/versions.lock.json) records Go 1.27.2, OCB/Collector experimental 0.163.0, Core stable 1.69.0, OpenTelemetry Go 1.47.0, and the build settings. Every run uses the same tools, component composition, resolved versions and Darwin/ARM64 platform. Linux/AMD64 OKE smoke tests are separate runtime evidence.
+
+The runner uses Python's standard library, Git, Go, and the [OpenTelemetry Collector Builder (OCB)](https://opentelemetry.io/docs/collector/extend/ocb/). The report uses browser standard libraries. No Python or JavaScript package installation is required.
+
+## Matched upstream and PR comparison
+
+Select a manifest's exact source commit in your existing Contrib checkout, then run:
+
+~~~sh
 python3 tools/locked_run.py \
   --manifest experiments/unified-tags/unified.json \
   --lock experiments/unified-tags/versions.lock.json \
@@ -90,23 +49,95 @@ python3 tools/locked_run.py \
   --output /path/to/new-run \
   --go /path/to/go-1.27.2/bin/go \
   --builder /path/to/ocb-0.163.0-built-with-go-1.27.2
-```
+~~~
 
-Repeat with `upstream.json` and `control.json` at their respective source commits, using the same executables and settings. `--targets ec2,oraclecloud` gives a small first run. The runner rejects dirty or incorrect source, mismatched versions, changed module files or measurement code, tool replacement, and incorrect embedded binary settings. It records tool hashes, resolved module versions, before/after checkpoints and every binary checksum.
+Repeat with upstream.json at its pinned source commit, using the same executables and settings. Pass --targets ec2,oraclecloud for a small first run. Internal manifest and dataset names such as unified and optout remain stable for reproducibility and existing shared URLs; they are not claims about what causes the savings.
 
-Combine the completed runs:
+The runner rejects dirty or incorrect source, mismatched versions, changed module files or measurement code, tool replacement, and incorrect embedded binary settings. It records tool hashes, resolved module versions, before/after checkpoints, and every binary checksum. Generated binaries and raw local paths remain ignored under .runs/.
 
-```sh
+Combine the completed matched runs and render both current pages:
+
+~~~sh
 python3 tools/compare.py \
   --upstream /path/to/upstream-run \
-  --unified /path/to/unified-run \
-  --control /path/to/control-run \
+  --unified /path/to/pr-run \
   --lock experiments/unified-tags/versions.lock.json \
-  --output docs/comparison.json --html docs/comparison.html
-```
+  --output docs/comparison.json \
+  --html docs/comparison.html \
+  --site-index docs/index.html
+~~~
 
-The comparison validates each selected target set with the existing publication contract, requires identical tools, component composition and resolved module versions across runs, and rejects local paths in exported data. The standalone HTML embeds the validated dataset and works offline. It reuses the original report’s visual styles, supports system/light/dark themes, and stores detector and module filters in the URL. The historical page retains its original dataset and explanation. Linux/amd64 OKE smoke tests are separate runtime evidence; their binary sizes are not mixed with Darwin/arm64 measurements.
+An optional --control /path/to/control-run retains an archived-source control at its recorded commit. This is supplementary evidence, not a fourth primary comparison.
+
+The comparison validates each selected target set with the publication contract. It requires identical tools, component composition and resolved module versions across runs. It rejects local paths in exported data.
+
+## Measurement definitions
+
+| Measure | Scope | Collection |
+| --- | --- | --- |
+| Reachable packages | Resource detection processor | go list -deps under selected tags, excluding standard-library packages |
+| Reachable modules | Resource detection processor | Distinct module paths that own those packages |
+| Packages per module | Resource detection processor | Count of reachable packages owned by each module |
+| Binary size | Complete minimal Collector | Byte size of the OCB-built executable with -s -w linker flags |
+| Binary metadata | Complete minimal Collector | go version -m output, stored as portable evidence |
+
+A Go module is a versioned dependency containing packages. Module counts here describe the production imports reachable from RDP, not every dependency of the complete executable. Build tags do not remove requirements from go.mod or isolate dependency versions.
+
+Every target uses the same minimal OTLP receiver, resource detection processor and debug exporter. “All detectors” means all RDP implementations, not the full Contrib distribution. Module reachability is not an SBOM, vulnerability result, license determination, or runtime performance measurement. Binary size is not processor-only size.
+
+The grid shows the PR selection versus upstream all detectors. Its squares provide module names and package counts on hover, tap, or keyboard focus. The three-way charts separately show the additional difference versus upstream selected detectors. Detector and module filters are stored in the URL.
+
+## September archive
+
+The [historical report](https://oso-team.github.io/otelcol-build-footprint/historical.html) preserves the September measurements and their original implementation explanation. It describes an earlier proposal. It is not evidence for the current implementation or a version-matched comparison with today's upstream.
+
+[docs/results.json](docs/results.json) was produced on 2026-09-28 at commit a5d5f6a7f795bbf53e45ef3a9a2291555c5c17b4, on Darwin/ARM64 with Go 1.26.4 and OCB 0.161.0. It contains a default build and 41 detector selections. The default measured 186 modules and 108,223,826 binary bytes. These historical measurements are not mixed with the current comparison.
+
+To reproduce it, use experiment.json, its exact public source commit, Go 1.26.4, and OCB 0.161.0. The current project Go pin selects the newer comparison toolchain, so pass the historical executable explicitly:
+
+~~~sh
+python3 tools/footprint.py \
+  --source /path/to/pinned-historical-contrib \
+  --targets all \
+  --go /path/to/go-1.26.4/bin/go \
+  --builder /path/to/ocb-0.161.0
+~~~
+
+Validate a complete historical run before replacing its archived data:
+
+~~~sh
+python3 tools/publish.py .runs/latest/results.json
+python3 tools/publish.py .runs/latest/results.json --write
+~~~
+
+The historical publisher updates docs/results.json and docs/historical.html. It does not overwrite the current homepage. The [earlier public report](https://oso-team.github.io/opentelemetry-collector-contrib/) remains available separately.
+
+## Develop and validate the report
+
+GitHub Pages serves docs/ from main. Both current pages embed the same measured snapshot from templates/comparison.html. The historical report embeds its separate September dataset.
+
+~~~sh
+python3 -m unittest discover -s tests -v
+python3 tools/publish.py docs/results.json
+python3 -m http.server 8000 --directory docs
+~~~
+
+Review the generated HTML alongside the template. Check the hero selector, dropdown prompt, module details, filter URLs, exact deltas, light/dark themes, and mobile layout before publishing. Keep source revisions and measurement inputs unchanged when editing presentation.
+
+## Repository layout
+
+| Path | Purpose |
+| --- | --- |
+| experiments/unified-tags/ | Pinned matched-comparison manifests and version lock |
+| tools/locked_run.py | Version-guarded build runner |
+| tools/compare.py | Cross-run validation and current report generation |
+| templates/comparison.html | Shared current-report source |
+| docs/index.html and docs/comparison.html | Identical current reports |
+| experiment.json and tools/footprint.py | Historical pinned experiment |
+| tools/publish.py | Historical publication validator |
+| docs/historical.html and docs/results.json | Historical report and dataset |
+| tests/ | Data contracts and publication checks |
 
 ## License and attribution
 
-This repository is licensed under [Apache-2.0](LICENSE). OpenTelemetry Collector and Collector Contrib are separately maintained [Apache-2.0 projects](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/LICENSE). The historical measurements are attributed to the [original public report](https://oso-team.github.io/opentelemetry-collector-contrib/). This project is an independent experiment and is not an official OpenTelemetry distribution.
+This repository is licensed under [Apache-2.0](LICENSE). OpenTelemetry Collector and Collector Contrib are separately maintained [Apache-2.0 projects](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/LICENSE). The report's visual foundation comes from the [original public report](https://oso-team.github.io/opentelemetry-collector-contrib/). This project is an independent experiment and is not an official OpenTelemetry distribution.

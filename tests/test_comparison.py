@@ -112,6 +112,7 @@ class ComparisonPresentationTests(unittest.TestCase):
         self.assertEqual(report, json.loads(payload))
         expected = (ROOT / "templates/comparison.html").read_text().replace("COMPARISON_DATA", payload)
         self.assertEqual(expected, html)
+        self.assertEqual(html, (ROOT / "docs/index.html").read_text())
 
 
 if __name__ == '__main__':

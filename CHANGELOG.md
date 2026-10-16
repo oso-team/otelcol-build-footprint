@@ -2,6 +2,10 @@
 
 ## 2026-10-15
 
+- Lead the homepage and comparison with pinned upstream-main versus PR measurements; preserve the September report at historical.html.
+- Restore module hover details, a selector above the hero grid, and its dropdown prompt, with keyboard and touch access.
+- Explain configuration dependency fixes separately from build-tag selection syntax, and show small binary increases in bytes.
+
 - Reuse the original report design for the matched comparison, with dark mode, module squares, shared filter URLs and the simplified mechanism explanation.
 
 - Add pinned manifests and a guarded runner for the matched unified-detector-tag comparison.

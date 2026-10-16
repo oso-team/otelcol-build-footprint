@@ -93,7 +93,7 @@ class ExperimentContractTest(unittest.TestCase):
 
     def test_standalone_html_contains_the_measured_public_dataset(self):
         report = json.loads((ROOT / "docs" / "results.json").read_text())
-        html = (ROOT / "docs" / "index.html").read_text()
+        html = (ROOT / "docs" / "historical.html").read_text()
         embedded = html.split(HTML_DATA_OPEN, 1)[1].split(HTML_DATA_CLOSE, 1)[0]
         self.assertEqual(report, json.loads(embedded))
         self.assertIsNone(UNPUBLISHABLE_TEXT.search(html))

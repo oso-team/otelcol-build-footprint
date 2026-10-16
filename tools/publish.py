@@ -103,7 +103,7 @@ def main() -> int:
     parser.add_argument("results", type=pathlib.Path, help="results.json from tools/footprint.py")
     parser.add_argument("--manifest", type=pathlib.Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--output", type=pathlib.Path, default=ROOT / "docs" / "results.json")
-    parser.add_argument("--html-output", type=pathlib.Path, default=ROOT / "docs" / "index.html")
+    parser.add_argument("--html-output", type=pathlib.Path, default=ROOT / "docs" / "historical.html")
     parser.add_argument("--write", action="store_true", help="replace the Pages dataset after validation")
     args = parser.parse_args()
     try:

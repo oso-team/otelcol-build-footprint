@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Matched measurements of default, opt-out and opt-in OpenTelemetry Collector resource-detector builds.">
+<meta name="description" content="Compare upstream main and PR #52063: selected resource detectors, reachable Go dependencies, and Collector binary size.">
 <link rel="icon" href="data:,">
-<title>Resource Detector Build Comparison</title>
+<title>Resource Detector Dependencies: Upstream and PR #52063</title>
 <style>
 
   /* ---------- tokens ---------- */
@@ -113,26 +113,37 @@
   .top a { font-size: 13px; }
 
 
-  .hero {display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;padding:44px 0 32px}
+
+  .hero {display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;padding:44px 0 28px}
   .eyebrow,.section-index {font:12px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
   .hero h1 {font-size:36px;line-height:1.13;margin:14px 0}
   .hero p {max-width:65ch;color:var(--ink-2)}
   .hero h1 span {color:var(--accent-ink)}
-  .selector {display:flex;flex-direction:column;gap:8px;margin:22px 0 14px;font-weight:600}
   select,input,button {font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--grid);border-radius:6px;min-height:44px;padding:9px 12px;max-width:100%}
-  select,input {width:100%} .theme-control {width:auto;min-height:36px;font-size:12px}
-  .result-card {border:1px solid var(--border);border-radius:10px;padding:24px;background:var(--surface)}
-  .result-label {font-size:14px;font-weight:600;margin-bottom:14px}
+  select,input {width:100%}
+  .theme-control {width:auto;min-height:36px;font-size:12px}
+  .result-card {border:1px solid var(--border);border-radius:10px;padding:20px 20px 16px;background:var(--surface);min-width:0}
+  .viz-title {display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:13px;font-weight:600;color:var(--ink-2)}
+  .select-wrap {position:relative;display:inline-flex;min-width:0;max-width:100%}
+  .inline-select {appearance:none;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--ink);padding:3px 28px 3px 9px;font:inherit;font-weight:650;line-height:1.3;width:auto;min-width:0;min-height:44px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 13px) 50%,calc(100% - 8px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+  .selector-coach {position:absolute;z-index:5;top:calc(100% + 12px);left:0;width:min(270px,calc(100vw - 76px));padding:10px 12px;border:1px solid #ad7d00;border-radius:8px;background:#ffdc5e;color:#241b00;box-shadow:0 10px 26px rgba(106,76,0,.24),0 0 0 3px rgba(255,220,94,.22);font-size:12.5px;font-weight:650;line-height:1.4;opacity:0;transform:translateY(-5px);transition:opacity .15s,transform .15s;pointer-events:none}
+  .selector-coach::before {content:"";position:absolute;bottom:100%;left:18px;border:7px solid transparent;border-bottom-color:#ad7d00}
+  .selector-coach::after {content:"";position:absolute;bottom:100%;left:19px;border:6px solid transparent;border-bottom-color:#ffdc5e}
+  .selector-coach[hidden] {display:none}
+  .selector-coach.is-visible {opacity:1;transform:translateY(0)}
+  .result-label {font-size:13px;font-weight:600;margin:14px 0 8px}
   .unit-grid {display:grid;grid-template-columns:repeat(16,1fr);gap:3px;margin:16px 0}
-  .cell {aspect-ratio:1;background:var(--accent);border-radius:2px}
+  .cell {display:block;width:100%;min-height:0;aspect-ratio:1;padding:0;border:0;background:var(--accent);border-radius:2px;cursor:help}
   .cell.gone {background:var(--bad-wash);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bad) 45%,transparent)}
   .unit-legend {display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--ink-2)}
   .swatch {display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;background:var(--accent)}
   .swatch.gone {background:var(--bad-wash);border:1px solid var(--bad)}
-  .kpis {display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:0 0 36px}
+  #module-tooltip {position:fixed;z-index:30;pointer-events:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 18px rgba(0,0,0,.14);padding:9px 12px;font-size:12.5px;max-width:min(340px,calc(100vw - 20px));color:var(--ink-2)}
+  #module-tooltip code {display:block;overflow-wrap:anywhere;color:var(--ink);font-weight:600;margin-bottom:4px}
+  .kpis {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 36px}
   .tile {border:1px solid var(--border);background:var(--surface);border-radius:10px;padding:14px 16px}
   .tile .t-label {display:block;font-size:12px;color:var(--ink-2)}
-  .tile .t-value {display:block;font-size:27px;font-weight:650;line-height:1.3;font-variant-numeric:tabular-nums}
+  .tile .t-value {display:block;font-size:27px;font-weight:650;line-height:1.3;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
   .tile .t-sub {display:block;font-size:12px;color:var(--muted)}
   .panel {padding:28px 0;border-top:1px solid var(--grid);scroll-margin-top:20px}
   .section-head {display:flex;align-items:baseline;gap:12px;margin-bottom:16px}
@@ -140,7 +151,7 @@
   .muted,.caption {color:var(--muted);font-size:13px}
   .charts {display:grid;grid-template-columns:1fr 1fr;gap:36px;margin:24px 0}
   .charts h3 {font-size:14px;margin-bottom:16px}
-  .barrow {display:grid;grid-template-columns:1fr auto;gap:6px 12px;margin:16px 0;font-size:13px}
+  .barrow {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;margin:16px 0;font-size:13px}
   .barrow .track {grid-column:1/-1;height:16px;background:var(--grid);border-radius:0 4px 4px 0}
   .bar {height:100%;border-radius:0 4px 4px 0}.default{background:var(--dim-bar)}.optout{background:var(--ink-2)}.unified{background:var(--accent)}
   .value {font-weight:650;font-variant-numeric:tabular-nums}
@@ -153,79 +164,119 @@
   .controls {display:grid;grid-template-columns:2fr 1fr;gap:20px}.controls label{display:flex;flex-direction:column;gap:8px;font-size:13px}
   pre {white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.7 ui-monospace,monospace;background:var(--code-bg);border:1px solid var(--border);padding:16px;border-radius:8px;max-height:360px;overflow:auto}
   details {margin:14px 0} summary {cursor:pointer;font-size:13px;font-weight:600;padding:8px 0}
-  .mechanism {display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:20px 0}.mechanism article{border-left:2px solid var(--grid);padding-left:16px}.mechanism article:last-child{border-color:var(--accent)}
+  .mechanism {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:20px 0}.mechanism article{border-left:2px solid var(--grid);padding-left:16px}.mechanism article:last-child{border-color:var(--accent)}
   .mechanism h3{font-size:14px}.mechanism p{font-size:13px;color:var(--ink-2)}
   .footer {border-top:1px solid var(--grid);margin-top:24px;padding:24px 0 40px;color:var(--muted);font-size:12px}
-  @media(max-width:700px){.wrap{padding:0 18px}.top{padding:12px 18px}.hero{grid-template-columns:1fr;gap:20px;padding-top:28px}.hero h1{font-size:30px}.charts,.controls,.mechanism{grid-template-columns:1fr;gap:16px}.kpis{gap:8px}.tile{padding:12px 10px}.tile .t-value{font-size:23px}.result-card{padding:18px}.section-head h2{font-size:21px}.top .repo{font-size:11px;overflow-wrap:anywhere}.barrow{font-size:12px}}
+  @media(max-width:920px){.hero{grid-template-columns:1fr;gap:24px;padding-top:28px}.hero h1{font-size:34px}}
+  @media(max-width:700px){.wrap{padding:0 18px}.top{padding:12px 18px}.hero h1{font-size:30px}.charts,.controls,.mechanism{grid-template-columns:1fr;gap:16px}.kpis{grid-template-columns:1fr;gap:8px}.tile{padding:12px 14px}.tile .t-value{font-size:25px}.section-head h2{font-size:21px}.top .repo{font-size:11px;overflow-wrap:anywhere}.barrow{font-size:12px}.inline-select{max-width:calc(100vw - 78px)}}
 </style>
 </head>
 <body>
-<header class="wrap top"><span class="repo mono">otelcol-build-footprint / resource detection</span><span class="spacer"></span><a href="index.html">Historical report</a><label class="mono">Theme <select id="theme" class="theme-control" aria-label="Color theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label></header>
+<header class="wrap top"><span class="repo mono">otelcol-build-footprint / resource detection</span><span class="spacer"></span><a href="historical.html">September archive</a><label class="mono">Theme <select id="theme" class="theme-control" aria-label="Color theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label></header>
 <main class="wrap">
 <section class="hero" aria-label="Headline result">
-  <div><p class="eyebrow">OpenTelemetry Collector · matched build experiment</p><h1>The same small build.<br><span>A simpler detector design.</span></h1>
-  <p>The opt-in design builds on upstream’s existing detector stubs. Compare its dependency and binary footprint with the default build and upstream’s opt-out tags.</p>
-  <label class="selector" for="target">Choose a detector selection<select id="target"></select></label>
-  <p id="coverage" class="caption"></p></div>
-  <div class="result-card"><div id="result-label" class="result-label"></div><div id="unit-grid" class="unit-grid" role="img"></div><div class="unit-legend"><span><i class="swatch"></i>Retained</span><span><i class="swatch gone"></i>Removed versus default</span></div><p class="caption">One square represents one reachable Go module. This is source reachability, not a complete software bill of materials.</p></div>
+  <div><p class="eyebrow">OpenTelemetry Collector · upstream main and PR #52063</p><h1>Keep the detectors you need.<br><span>Leave more unused dependencies behind.</span></h1>
+  <p>Upstream build tags already let custom Collectors exclude detectors. PR #52063 builds on that work and removes dependencies still reached through configuration code.</p>
+  <p id="coverage" class="caption"></p><p class="caption">Measured at pinned source commits, not live branch heads. Choose a detector beside the grid to compare the same selection.</p></div>
+  <div class="result-card">
+    <div class="viz-title"><label for="target">Detectors</label><span class="select-wrap"><select id="target" class="inline-select" aria-describedby="grid-help"></select><span id="selector-coach" class="selector-coach" role="note" hidden>Try the dropdown to compare another detector or a group of detectors.</span></span></div>
+    <div id="result-label" class="result-label" aria-live="polite"></div>
+    <div id="unit-grid" class="unit-grid" role="group" aria-label="Reachable modules"></div>
+    <div class="unit-legend"><span><i class="swatch"></i><span id="leg-stay">Remain in PR build</span></span><span><i class="swatch gone"></i><span id="leg-gone">Removed versus all detectors</span></span></div>
+    <p id="grid-help" class="caption">One square is one reachable Go module, a versioned dependency. Hover or tap a square for its name and package counts. With a keyboard, use arrow keys to explore.</p>
+    <p class="caption">Grid: PR selected detectors versus upstream all detectors. The charts below separate upstream’s existing savings from the PR’s additional reduction.</p>
+  </div>
 </section>
-<div class="kpis" aria-live="polite"><div class="tile"><span class="t-label">Opt-in modules</span><span class="t-value" id="kpi-modules"></span><span class="t-sub" id="kpi-modules-sub"></span></div><div class="tile"><span class="t-label">Opt-in Collector size</span><span class="t-value" id="kpi-size"></span><span class="t-sub">Complete stripped binary</span></div><div class="tile"><span class="t-label">Size versus opt-out</span><span class="t-value" id="kpi-saving"></span><span class="t-sub" id="kpi-saving-sub"></span></div></div>
-<section class="panel" aria-label="Build comparison"><div class="section-head"><span class="section-index">01</span><h2>Three ways to select detectors</h2></div>
-<p class="muted">All three strategies use the same minimal OTLP receiver → resource detection → debug exporter composition. “Default” includes every RDP detector; it is not the full Contrib distribution.</p>
+<div class="kpis" aria-live="polite"><div class="tile"><span class="t-label">PR · reachable modules</span><span class="t-value" id="kpi-modules"></span><span class="t-sub" id="kpi-modules-sub"></span></div><div class="tile"><span class="t-label">PR · Collector size</span><span class="t-value" id="kpi-size"></span><span class="t-sub">Complete stripped minimal Collector</span></div><div class="tile"><span class="t-label">PR size versus upstream selected</span><span class="t-value" id="kpi-saving"></span><span class="t-sub" id="kpi-saving-sub"></span></div></div>
+<section class="panel" aria-label="Build comparison"><div class="section-head"><span class="section-index">01</span><h2>Compare the same detector selection</h2></div>
+<p class="muted">All builds contain the same minimal pipeline: an OTLP receiver → resource detection processor (RDP) → debug exporter. “All detectors” means every RDP detector is compiled; it does not mean the full Contrib distribution.</p>
+<p class="muted">The two selected builds compile the same set of detectors. Extra savings come from removing configuration dependency paths, not from choosing enable tags instead of omit tags. This experiment compares the complete changes; it does not measure each dependency fix separately.</p>
 <div class="charts"><div><h3>Reachable Go modules</h3><div id="module-bars"></div></div><div><h3>Collector binary size</h3><div id="binary-bars"></div></div></div>
-<div class="scroll" role="region" aria-label="Exact build measurements" tabindex="0"><table><caption>Exact measurements for the selected detectors</caption><thead><tr><th scope="col">Build strategy</th><th scope="col">Modules</th><th scope="col">Packages</th><th scope="col">Binary bytes</th><th scope="col">Smaller than default</th></tr></thead><tbody id="metrics"></tbody></table></div><p id="parity" class="caption"></p>
+<div class="scroll" role="region" aria-label="Exact build measurements" tabindex="0"><table><caption>Exact measurements · upstream main and PR implementation at pinned commits</caption><thead><tr><th scope="col">Measured build</th><th scope="col">Modules</th><th scope="col">Packages</th><th scope="col">Binary bytes</th><th scope="col">Size versus upstream all</th></tr></thead><tbody id="metrics"></tbody></table></div>
+<p class="caption">Savings vary by selection. When selected detectors still need the same libraries, reductions can be small or absent. Small binary increases are shown too.</p>
 </section>
-<section class="panel"><div class="section-head"><span class="section-index">02</span><h2>One mechanism, two selection styles</h2></div>
-<div class="mechanism"><article><h3>Default: include everything</h3><p>No detector tags. Existing configurations and default behavior stay available.</p></article><article><h3>Opt-out: subtract detectors</h3><p>Existing <code>omit_detector_*</code> tags select upstream’s omitted implementations. Configuration imports can still retain SDK dependencies.</p></article><article><h3>Opt-in: keep what you need</h3><p>Global remove-all plus individual enable tags use those same implementation/stub files. Three targeted dependency fixes keep unused SDKs out.</p></article></div>
-<p class="muted">Both tag styles remain supported. Omit wins when enable and omit conflict. Typed configuration stays in each detector package; the separate registration layer and detector config subpackages are no longer needed.</p>
-<p class="caption">The measured prototype changes 100 files versus the earlier proposal’s 196, against the same upstream base. The landing update adds one regression-test file. The rebuilt Oracle and EC2 controls retain identical module sets and binary sizes. Size savings vary by selection; small increases are shown as measured.</p>
+<section class="panel"><div class="section-head"><span class="section-index">02</span><h2>What this PR adds to upstream main</h2></div>
+<p>A resource detector adds facts about where telemetry runs, such as a cloud region or host name. Build tags choose which implementations Go compiles. The YAML <code>detectors</code> list chooses which compiled implementations run; omitting a detector from YAML does not remove its code.</p>
+<p>Upstream already provides each detector’s implementation and an omitted version, selected by <code>omit_detector_*</code> tags. This PR reuses those files. It adds <code>remove_all_resourcedetection_detectors</code> plus individual <code>enable_resourcedetection_*_detector</code> tags, so a builder can start empty and name only the required detectors.</p>
+<p>Both tag styles remain supported. An omit tag wins if it conflicts with an enable tag. Without global removal, enable tags do not trim a default build. Starting with global removal also leaves newly added detectors excluded until explicitly enabled.</p>
+<p>Go imports code in packages. A configuration field or default can keep a provider library (an SDK) reachable even when its detector implementation is excluded. The PR breaks three such connections:</p>
+<div class="mechanism">
+<article><h3>Kubernetes configuration</h3><p>Put connection fields and validation in a small package without Kubernetes client imports. Included detectors convert these settings to the existing client configuration. Other components keep their existing client type.</p></article>
+<article><h3>GCP resource helpers</h3><p>Move helpers that use the GCP detector library out of the always-compiled metadata package. The helpers now compile with the GCP implementation, so excluded GCP code no longer keeps that library reachable through configuration.</p></article>
+<article><h3>EC2 retry defaults</h3><p>Declare the same two defaults locally: three attempts and a 20-second maximum backoff. Configuration no longer imports the AWS retry package just for these values.</p></article>
+</div>
+<p>Typed configuration remains available in every build, with the same YAML fields. A factory filters unavailable constructors and reports an error if YAML selects an excluded detector. Builds without <code>env</code> must override the default <code>detectors: [env]</code>.</p>
+<details><summary>How to build and configure a selected Collector</summary>
+<p>For Oracle Cloud, pass these tags to the Collector build, then set <code>detectors: [oraclecloud]</code> in the resource detection processor configuration. The tags select source files at build time. The YAML list selects available detectors at runtime.</p>
+<pre>remove_all_resourcedetection_detectors,enable_resourcedetection_oraclecloud_detector</pre>
+<p>Build tags do not remove requirements from <code>go.mod</code> or select independent dependency versions. Other Collector components can still require libraries excluded from RDP. Unknown build tags are silently ignored by Go, so spelling matters.</p>
+<p><a href="https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/52063">Read PR #52063</a> · <a id="source-readme">Read the measured build instructions and full tag list</a></p>
+</details>
 </section>
 <section class="panel"><div class="section-head"><span class="section-index">03</span><h2>Inspect the dependencies</h2></div>
-<div class="controls"><label for="module-mode">Module list<select id="module-mode"><option value="removed">Removed by opt-in versus upstream opt-out</option><option value="unified">Remaining in opt-in</option><option value="optout">Remaining in upstream opt-out</option><option value="default">Remaining in default</option></select></label><label for="filter">Filter modules<input id="filter" type="search" placeholder="Module path"></label></div>
+<p class="muted">A Go module is a versioned dependency containing one or more packages. Counts here cover modules and packages reachable from RDP’s production source. They are not the dependency inventory of the complete Collector executable or a complete software bill of materials.</p>
+<div class="controls"><label for="module-mode">Module list<select id="module-mode"><option value="removed">Removed by PR versus upstream selected</option><option value="unified">Remaining in PR selected</option><option value="optout">Remaining in upstream selected</option><option value="default">Remaining in upstream all</option></select></label><label for="filter">Filter modules<input id="filter" type="search" placeholder="Module path"></label></div>
 <p id="module-count" class="caption" aria-live="polite"></p><pre id="module-list" tabindex="0" aria-label="Matching module paths"></pre>
 </section>
 <section class="panel"><div class="section-head"><span class="section-index">04</span><h2>Reproduce and verify</h2></div>
-<p>Every strategy uses the same Go, OCB, Collector dependencies, platform and build flags. Exact source revisions, tags and binary checksums are recorded below. These are pinned measurements; later test and documentation changes do not relabel them.</p><p id="versions" class="caption"></p><div id="inputs"></div>
-<p><a href="comparison.json">Download the complete comparison data</a> · <a href="https://github.com/oso-team/otelcol-build-footprint#matched-unified-tag-comparison">Reproduction instructions</a> · <a href="https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/52063">Proposal and review</a></p><ul id="notes" class="caption"></ul>
+<p>Every measured build uses the same Go and OCB executables, Collector component versions, platform and build flags. OCB is the OpenTelemetry Collector Builder. Exact source revisions, tags and binary checksums are recorded below; the upstream source is a frozen snapshot of main.</p><p id="versions" class="caption"></p><div id="inputs"></div>
+<details id="supplementary"><summary>Supplementary reproducibility controls</summary><p id="parity" class="caption"></p></details>
+<details><summary>PR build with all detectors</summary><p id="pr-baseline" class="caption"></p></details>
+<p><a href="comparison.json">Download the complete comparison data</a> · <a href="https://github.com/oso-team/otelcol-build-footprint#matched-upstream-and-pr-comparison">Reproduction instructions</a> · <a href="https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/52063">Proposal and review</a></p><ul id="notes" class="caption"></ul>
 </section>
-<footer class="footer">Measured build footprint · Darwin/arm64 · Linux/amd64 OKE runtime checks are separate evidence. Historical September measurements remain in the <a href="index.html">original report</a>.</footer>
+<footer class="footer">Pinned build-footprint experiment · Darwin/arm64 · Not a runtime-performance benchmark. Linux/amd64 OKE runtime checks are separate evidence. <a href="historical.html">September archive: earlier measurements and implementation</a>.</footer>
 </main>
+<div id="module-tooltip" role="tooltip" hidden></div>
 <script id="comparison-data" type="application/json">COMPARISON_DATA</script>
 <script>
 'use strict';
 const data=JSON.parse(document.querySelector('#comparison-data').textContent);
-const $=id=>document.getElementById(id), names={default:'Default: all detectors',optout:'Upstream: opt-out tags',unified:'Simplified: opt-in tags'};
+// Stable data keys also preserve existing shared filter URLs.
+const $=id=>document.getElementById(id), names={default:'Upstream main · all detectors',optout:'Upstream main · selected detectors',unified:'PR #52063 · selected detectors'};
 const entries=Object.fromEntries(Object.entries(data.runs).map(([key,run])=>[key,Object.fromEntries([run.report.baseline,...run.report.builds].map(build=>[build.id,build]))]));
 const number=value=>value.toLocaleString('en-US'), mib=value=>(value/1048576).toFixed(2)+' MiB';
 function element(tag,text,parent){const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(parent)parent.appendChild(node);return node;}
+function sizeChange(bytes,reference){const difference=bytes-reference;if(difference===0)return 'Same size';const percent=Math.abs(100*difference/reference);if(percent<0.05)return (difference>0?'+':'−')+number(Math.abs(difference))+' bytes';return percent.toFixed(1)+'% '+(difference>0?'larger':'smaller');}
 function restore(){const state=new URLSearchParams(location.search);if(data.rows.some(row=>row.id===state.get('target')))$('target').value=state.get('target');if(['removed','unified','optout','default'].includes(state.get('modules')))$('module-mode').value=state.get('modules');$('filter').value=state.get('filter')||'';}
 function save(){const url=new URL(location.href);url.searchParams.set('target',$('target').value);url.searchParams.set('modules',$('module-mode').value);if($('filter').value)url.searchParams.set('filter',$('filter').value);else url.searchParams.delete('filter');try{history.replaceState(null,'',url);}catch{}}
 for(const row of data.rows){const option=element('option',row.label,$('target'));option.value=row.id;}
 if(data.rows.some(row=>row.id==='oraclecloud'))$('target').value='oraclecloud';
 restore();
 const s=data.settings;
-$('versions').textContent=`Go ${s.go_version} · OCB ${s.builder_version} · Collector ${s.collector_experimental} / ${s.collector_stable} · ${s.goos}/${s.goarch} · CGO ${s.cgo_enabled} · ${s.goflags} · linker ${s.ldflags}`;
-$('coverage').textContent=`${data.rows.length} measured detector selections. Oracle and EC2 also have rebuilt controls of the earlier implementation.`;
+$('versions').textContent='Go '+s.go_version+' · OCB '+s.builder_version+' · Collector '+s.collector_experimental+' / '+s.collector_stable+' · '+s.goos+'/'+s.goarch+' · CGO '+s.cgo_enabled+' · '+s.goflags+' · linker '+s.ldflags;
+$('coverage').textContent=data.rows.length+' matched detector selections, including single detectors and common groups.';
 for(const note of data.notes)element('li',note,$('notes'));
+const sourceRun=data.runs.unified.manifest.source;
+$('source-readme').href=sourceRun.url.replace(/\.git$/,'')+'/blob/'+sourceRun.commit+'/processor/resourcedetectionprocessor/README.md#building-with-selected-detectors';
 function selected(){return data.rows.find(row=>row.id===$('target').value);}
 function build(row,strategy){const ref=row[strategy];return entries[ref.run][ref.id];}
 function modules(){const row=selected(),mode=$('module-mode').value;let list;
 if(mode==='removed'){const kept=new Set(build(row,'unified').modules);list=build(row,'optout').modules.filter(name=>!kept.has(name));}else list=build(row,mode).modules;
 const filtered=list.filter(name=>name.toLowerCase().includes($('filter').value.toLowerCase()));
-$('module-count').textContent=`${filtered.length} of ${list.length} modules shown`;$('module-list').textContent=filtered.join('\n')||'No matching modules.';}
+$('module-count').textContent=filtered.length+' of '+list.length+' modules shown';$('module-list').textContent=filtered.join('\n')||'No matching modules.';}
+function hideTip(){$('module-tooltip').hidden=true;}
+function showTip(item,current,base,x,y){const tip=$('module-tooltip');tip.replaceChildren();element('code',item.name,tip);element('div',item.kept?'Remains in PR selected build':'Removed versus upstream all detectors',tip);element('div','Reachable packages: '+(current.module_packages[item.name]||0)+' PR / '+(base.module_packages[item.name]||0)+' upstream all',tip);tip.hidden=false;const rect=tip.getBoundingClientRect();tip.style.left=Math.max(10,Math.min(x+14,innerWidth-rect.width-10))+'px';tip.style.top=Math.max(10,Math.min(y+14,innerHeight-rect.height-10))+'px';}
+function renderGrid(current,base){hideTip();const grid=$('unit-grid');grid.replaceChildren();const kept=new Set(current.modules),items=current.modules.slice().sort().map(name=>({name,kept:true})).concat(base.modules.filter(name=>!kept.has(name)).sort().map(name=>({name,kept:false})));
+grid.setAttribute('aria-label',current.module_count+' modules remain in PR build; '+(base.module_count-current.module_count)+' removed versus upstream all detectors');
+items.forEach((item,index)=>{const cell=element('button',undefined,grid);cell.type='button';cell.className='cell'+(item.kept?'':' gone');cell.tabIndex=index===0?0:-1;cell.setAttribute('aria-label',item.name+(item.kept?' remains':' removed'));cell.setAttribute('aria-describedby','module-tooltip');const show=()=>{const rect=cell.getBoundingClientRect();showTip(item,current,base,rect.left,rect.bottom);};cell.addEventListener('pointermove',event=>showTip(item,current,base,event.clientX,event.clientY));cell.addEventListener('pointerleave',hideTip);cell.addEventListener('focus',()=>{for(const item of grid.children)item.tabIndex=-1;cell.tabIndex=0;show();});cell.addEventListener('blur',hideTip);cell.addEventListener('click',show);cell.addEventListener('keydown',event=>{const moves={ArrowRight:1,ArrowLeft:-1,ArrowDown:16,ArrowUp:-16,Home:-index,End:items.length-1-index};if(event.key in moves){event.preventDefault();const next=Math.max(0,Math.min(items.length-1,index+moves[event.key]));cell.tabIndex=-1;grid.children[next].tabIndex=0;grid.children[next].focus();}});});
+$('leg-stay').textContent=current.module_count+' remain in PR build';$('leg-gone').textContent=(base.module_count-current.module_count)+' removed versus all detectors';}
 function render(){const row=selected(),keys=['default','optout','unified'];$('metrics').replaceChildren();$('inputs').replaceChildren();
 const current=build(row,'unified'),base=build(row,'default'),optout=build(row,'optout');
-$('result-label').textContent=`${row.label}: ${current.module_count} of ${base.module_count} modules retained`;
-$('unit-grid').replaceChildren();$('unit-grid').setAttribute('aria-label',`${current.module_count} retained modules; ${base.module_count-current.module_count} removed versus default`);
-for(let index=0;index<base.module_count;index++){const cell=element('span',undefined,$('unit-grid'));cell.className='cell'+(index>=current.module_count?' gone':'');cell.setAttribute('aria-hidden','true');}
-$('kpi-modules').textContent=number(current.module_count);$('kpi-modules-sub').textContent=`${base.module_count-current.module_count} fewer than default`;
-$('kpi-size').textContent=mib(current.binary_bytes);const saving=100*(1-current.binary_bytes/optout.binary_bytes);$('kpi-saving').textContent=Math.abs(saving).toFixed(1)+'%';$('kpi-saving-sub').textContent=saving>=0?'Smaller than upstream opt-out':'Larger than upstream opt-out';
+$('result-label').textContent=row.label+': '+current.module_count+' of '+base.module_count+' modules remain';
+renderGrid(current,base);
+$('kpi-modules').textContent=number(current.module_count);const moduleDiff=optout.module_count-current.module_count;$('kpi-modules-sub').textContent=moduleDiff===0?'Same count as upstream selected':Math.abs(moduleDiff)+' '+(moduleDiff>0?'fewer':'more')+' than upstream selected';
+$('kpi-size').textContent=mib(current.binary_bytes);$('kpi-saving').textContent=sizeChange(current.binary_bytes,optout.binary_bytes);$('kpi-saving-sub').textContent='Same detector selection · exact difference '+(current.binary_bytes-optout.binary_bytes>0?'+':'')+number(current.binary_bytes-optout.binary_bytes)+' bytes';
 for(const [id,metric,format] of [['module-bars','module_count',number],['binary-bars','binary_bytes',mib]]){const parent=$(id);parent.replaceChildren();const max=Math.max(...keys.map(key=>build(row,key)[metric]));for(const key of keys){const item=element('div',undefined,parent);item.className='barrow';element('span',names[key],item);element('span',format(build(row,key)[metric]),item).className='value';const track=element('div',undefined,item);track.className='track';track.setAttribute('aria-hidden','true');const bar=element('div',undefined,track);bar.className='bar '+key;bar.style.width=(100*build(row,key)[metric]/max)+'%';}}
-for(const key of keys){const item=build(row,key),tr=element('tr',undefined,$('metrics'));tr.dataset.strategy=key;for(const value of [names[key],number(item.module_count),number(item.package_count),number(item.binary_bytes),(100*(1-item.binary_bytes/base.binary_bytes)).toFixed(1)+'%'])element('td',value,tr);
-const detail=element('details',undefined,$('inputs'));element('summary',names[key],detail);const run=data.runs[row[key].run];const link=element('a','View measured source on GitHub',detail);link.href=run.manifest.source.url.replace(/\.git$/,'')+'/commit/'+run.manifest.source.commit;element('pre',`Source: ${run.manifest.source.commit}\nTags: ${item.tags.join(',')||'(none)'}\nBinary SHA-256: ${run.binary_receipts[item.id].sha256}`,detail);}
-if(row.control){const control=build(row,'control'),sameModules=JSON.stringify(control.modules)===JSON.stringify(current.modules);$('parity').textContent=`Earlier implementation control: ${control.module_count} modules, ${number(control.binary_bytes)} bytes. Simplified: ${sameModules?'identical module set':'different module set'}; binary size difference ${number(current.binary_bytes-control.binary_bytes)} bytes.`;}else $('parity').textContent='No earlier-implementation control was measured for this selection.';
+for(const key of keys){const item=build(row,key),tr=element('tr',undefined,$('metrics'));tr.dataset.strategy=key;for(const value of [names[key],number(item.module_count),number(item.package_count),number(item.binary_bytes),sizeChange(item.binary_bytes,base.binary_bytes)])element('td',value,tr);
+const detail=element('details',undefined,$('inputs'));element('summary',names[key]+' · pinned source and tags',detail);const run=data.runs[row[key].run];const link=element('a','View measured source on GitHub',detail);link.href=run.manifest.source.url.replace(/\.git$/,'')+'/commit/'+run.manifest.source.commit;element('pre','Source: '+run.manifest.source.commit+'\nTags: '+(item.tags.join(',')||'(none)')+'\nBinary SHA-256: '+run.binary_receipts[item.id].sha256,detail);}
+$('supplementary').hidden=!row.control;
+if(row.control){const control=build(row,'control'),sameModules=JSON.stringify(control.modules)===JSON.stringify(current.modules);$('parity').textContent='An additional archived source run for '+row.label+' is retained in the raw evidence. Its module set is '+(sameModules?'identical to':'different from')+' the PR build; binary difference: '+number(current.binary_bytes-control.binary_bytes)+' bytes. This control is not the upstream comparison.';}
+const full=data.runs.unified.report.baseline;
+$('pr-baseline').textContent='With every detector compiled, the measured PR build has '+full.module_count+' reachable modules and '+number(full.binary_bytes)+' binary bytes. Compared with upstream’s '+number(base.binary_bytes)+' bytes, the difference is '+sizeChange(full.binary_bytes,base.binary_bytes)+'. The three-way chart uses upstream’s default as its common baseline.';
 modules();}
-$('target').addEventListener('change',()=>{render();save();});$('module-mode').addEventListener('change',()=>{modules();save();});$('filter').addEventListener('input',()=>{modules();save();});window.addEventListener('popstate',()=>{restore();render();});
+function hideCoach(){clearTimeout(coachTimer);$('selector-coach').hidden=true;$('selector-coach').classList.remove('is-visible');$('target').setAttribute('aria-describedby','grid-help');}
+const coachTimer=setTimeout(()=>{$('selector-coach').hidden=false;$('selector-coach').classList.add('is-visible');$('target').setAttribute('aria-describedby','selector-coach grid-help');},900);
+document.addEventListener('pointerdown',hideCoach,{once:true});$('target').addEventListener('pointerdown',hideCoach);$('target').addEventListener('keydown',hideCoach);$('target').addEventListener('change',()=>{hideCoach();render();save();});$('module-mode').addEventListener('change',()=>{modules();save();});$('filter').addEventListener('input',()=>{modules();save();});window.addEventListener('popstate',()=>{restore();render();});document.addEventListener('keydown',event=>{if(event.key==='Escape'){hideTip();hideCoach();}});window.addEventListener('scroll',hideTip,{passive:true});window.addEventListener('resize',hideTip);
 function theme(value){if(value==='system')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=value;}
 try{const value=localStorage.getItem('footprint-theme');if(['system','light','dark'].includes(value))$('theme').value=value;}catch{}
 $('theme').addEventListener('change',()=>{theme($('theme').value);try{localStorage.setItem('footprint-theme',$('theme').value);}catch{}});theme($('theme').value);render();

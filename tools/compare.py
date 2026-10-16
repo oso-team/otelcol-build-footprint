@@ -125,6 +125,7 @@ def main() -> int:
     parser.add_argument('--lock', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--html', type=Path)
+    parser.add_argument('--site-index', type=Path, help='also render the current report as the site homepage')
     args = parser.parse_args()
     try:
         lock = json.loads(args.lock.read_text())
@@ -133,10 +134,13 @@ def main() -> int:
         report = assemble(runs, {key: lock[key] for key in SETTINGS}, lock['upstream_commit'])
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + '\n')
-        if args.html:
+        if args.html or args.site_index:
             template = (Path(__file__).resolve().parents[1] / 'templates/comparison.html').read_text()
             payload = json.dumps(report, separators=(',', ':')).replace('<', '\\u003c')
-            args.html.write_text(template.replace('COMPARISON_DATA', payload))
+            html = template.replace('COMPARISON_DATA', payload)
+            for destination in (args.html, args.site_index):
+                if destination:
+                    destination.write_text(html)
         print(f"Validated {len(report['rows'])} matched detector selections across {len(runs)} source runs")
     except (OSError, ValueError, KeyError) as exc:
         print('error: ' + str(exc), file=sys.stderr)
