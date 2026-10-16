@@ -2,6 +2,8 @@
 
 ## 2026-10-16
 
+- Remove the removed-segment outline so adjacent bar colors meet without a seam stroke.
+
 - Remove the disconnected zero-axis label and make retained/removed bar segments meet at a straight seam.
 
 - Restore Compare Builds with a shared upstream baseline, paired bars for all 41 selections, filters, module/binary measures, and a table view.
