@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-19
+
+- Add a detector selector beside the three-way comparison, synchronized with the hero grid and shared URL.
+- Label the Compare Builds default baseline and keep its bar visible while scrolling through the chart.
+
 ## 2026-10-16
 
 - Darken the removed portions of comparison bars to improve contrast against the page background.

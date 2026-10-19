@@ -150,6 +150,10 @@
   .section-head h2 {font-size:23px;line-height:1.2}
   .muted,.caption {color:var(--muted);font-size:13px}
   .charts {display:grid;grid-template-columns:1fr 1fr;gap:36px;margin:24px 0}
+  .comparison-selection {display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;margin:22px 0 0;padding:14px 16px;border:1px solid var(--border);border-radius:10px;background:var(--surface)}
+  .comparison-selection label {font-size:13px;font-weight:650;color:var(--ink-2)}
+  .comparison-selection .inline-select {min-width:220px}
+  .comparison-selection .caption {margin:0}
   .charts h3 {font-size:14px;margin-bottom:16px}
   .barrow {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;margin:16px 0;font-size:13px}
   .barrow .track {grid-column:1/-1;height:16px;background:var(--grid);border-radius:0 4px 4px 0}
@@ -313,7 +317,9 @@
   .explorer-controls {display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
   .explorer-controls label {display:flex;align-items:center;gap:8px;font-size:13px}
   .explorer-controls select {width:auto}
-  .build-baseline {display:grid;grid-template-columns:240px minmax(90px,1fr) 180px;gap:16px;align-items:center;padding:14px 4px 18px;border-bottom:1px solid var(--grid);margin-bottom:16px;font-size:13px}
+  .build-baseline-sticky {position:sticky;top:0;z-index:4;padding:1px 0 8px;border-bottom:1px solid var(--grid);background:var(--surface)}
+  .build-baseline-sticky .grp-h {margin:2px 4px 0}
+  .build-baseline {display:grid;grid-template-columns:240px minmax(90px,1fr) 180px;gap:16px;align-items:center;padding:8px 4px 4px;font-size:13px}
   .build-baseline .b-track {background:var(--baseline)}
   .build-pair {padding:12px 0;border-bottom:1px solid var(--grid)}
   .build-pair h3 {font-size:14px;margin:0 0 6px}
@@ -354,7 +360,7 @@
   #build-tip .inspect {margin-top:6px;color:var(--accent-ink);font-weight:650}
   .build-explorer .category-note {font-size:12px;color:var(--muted)}
   @media(max-width:920px){.build-explorer .bar-row,.build-baseline{grid-template-columns:180px minmax(90px,1fr) 150px;gap:10px}.build-explorer .stat-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
-  @media(max-width:600px){.build-explorer .bar-row,.build-baseline{grid-template-columns:minmax(0,1fr);grid-template-areas:"label" "track" "value";gap:7px}.build-explorer .b-lbl,.build-baseline .baseline-label{grid-area:label}.build-explorer .b-track{grid-area:track}.build-explorer .bar-row .b-val,.build-baseline .baseline-value{grid-area:value;align-items:flex-start;text-align:left}.build-explorer .detail-card{padding:18px 12px}.build-explorer .stat-row{grid-template-columns:minmax(0,1fr)}.build-explorer .diff-head{align-items:flex-start}.build-explorer .diff-head input{width:100%}.build-explorer .toolbar .spacer{display:none}.build-explorer .evidence-links{gap:10px}.build-explorer .cmd{white-space:pre-wrap;overflow-wrap:anywhere}.build-explorer .diff-controls{align-items:stretch;flex-direction:column}.build-explorer .diff-controls label{align-items:stretch;flex-direction:column}.build-explorer .diff-controls select{width:100%}.build-explorer .axis{padding-left:0}}
+  @media(max-width:600px){.comparison-selection .select-wrap,.comparison-selection .inline-select{width:100%}.build-explorer .bar-row,.build-baseline{grid-template-columns:minmax(0,1fr);grid-template-areas:"label" "track" "value";gap:7px}.build-explorer .b-lbl,.build-baseline .baseline-label{grid-area:label}.build-explorer .b-track{grid-area:track}.build-explorer .bar-row .b-val,.build-baseline .baseline-value{grid-area:value;align-items:flex-start;text-align:left}.build-explorer .detail-card{padding:18px 12px}.build-explorer .stat-row{grid-template-columns:minmax(0,1fr)}.build-explorer .diff-head{align-items:flex-start}.build-explorer .diff-head input{width:100%}.build-explorer .toolbar .spacer{display:none}.build-explorer .evidence-links{gap:10px}.build-explorer .cmd{white-space:pre-wrap;overflow-wrap:anywhere}.build-explorer .diff-controls{align-items:stretch;flex-direction:column}.build-explorer .diff-controls label{align-items:stretch;flex-direction:column}.build-explorer .diff-controls select{width:100%}.build-explorer .axis{padding-left:0}}
 
 </style>
 </head>
@@ -378,6 +384,7 @@
 <section class="panel" aria-label="Build comparison"><div class="section-head"><span class="section-index">01</span><h2>Compare the same detector selection</h2></div>
 <p class="muted">All builds contain the same minimal pipeline: an OTLP receiver → resource detection processor (RDP) → debug exporter. “All detectors” means every RDP detector is compiled; it does not mean the full Contrib distribution.</p>
 <p class="muted">The two selected builds compile the same set of detectors. Extra savings come from removing configuration dependency paths, not from choosing enable tags instead of omit tags. This experiment compares the complete changes; it does not measure each dependency fix separately.</p>
+<div class="comparison-selection"><label for="comparison-target">Compare builds using</label><span class="select-wrap"><select id="comparison-target" class="inline-select" aria-describedby="comparison-selection-help"></select></span><span id="comparison-selection-help" class="caption">The charts and exact measurements below use this detector selection.</span></div>
 <div class="charts"><div><h3>Reachable Go modules</h3><div id="module-bars"></div></div><div><h3>Collector binary size</h3><div id="binary-bars"></div></div></div>
 <div class="scroll" role="region" aria-label="Exact build measurements" tabindex="0"><table><caption>Exact measurements · upstream main and PR implementation at pinned commits</caption><thead><tr><th scope="col">Measured build</th><th scope="col">Modules</th><th scope="col">Packages</th><th scope="col">Binary bytes</th><th scope="col">Size versus upstream all</th></tr></thead><tbody id="metrics"></tbody></table></div>
 <p class="caption">Savings vary by selection. When selected detectors still need the same libraries, reductions can be small or absent. Small binary increases are shown too.</p>
@@ -395,7 +402,7 @@
 </div>
 <div class="explorer-controls"><label for="build-metric">Bar measurement <select id="build-metric"><option value="modules">Reachable modules</option><option value="bytes">Collector binary size</option></select></label><span id="build-coverage" class="caption" aria-live="polite"></span></div>
 <div class="chart-card" id="build-chart-view">
-<div id="build-baseline" class="build-baseline"></div>
+<div class="build-baseline-sticky"><div class="grp-h">Baseline - default build</div><div id="build-baseline" class="build-baseline"></div></div>
 <div class="axis"><span id="build-axis"></span></div>
 <div id="build-chart"></div>
 <div class="chart-foot"><span class="key">Solid: retained in this build</span><span class="key"><i class="swatch gone"></i>Pale red: removed versus upstream all</span><span class="key" id="build-unit-note"></span></div>
@@ -449,7 +456,7 @@ function element(tag,text,parent){const node=document.createElement(tag);if(text
 function sizeChange(bytes,reference){const difference=bytes-reference;if(difference===0)return 'Same size';const percent=Math.abs(100*difference/reference);if(percent<0.05)return (difference>0?'+':'−')+number(Math.abs(difference))+' bytes';return percent.toFixed(1)+'% '+(difference>0?'larger':'smaller');}
 function restore(){const state=new URLSearchParams(location.search);if(data.rows.some(row=>row.id===state.get('target')))$('target').value=state.get('target');if(['removed','unified','optout','default'].includes(state.get('modules')))$('module-mode').value=state.get('modules');$('filter').value=state.get('filter')||'';}
 function save(){const url=new URL(location.href);url.searchParams.set('target',$('target').value);url.searchParams.set('modules',$('module-mode').value);if($('filter').value)url.searchParams.set('filter',$('filter').value);else url.searchParams.delete('filter');try{history.replaceState(null,'',url);}catch{}}
-for(const row of data.rows){const option=element('option',row.label,$('target'));option.value=row.id;}
+for(const row of data.rows)for(const id of ['target','comparison-target']){const option=element('option',row.label,$(id));option.value=row.id;}
 if(data.rows.some(row=>row.id==='oraclecloud'))$('target').value='oraclecloud';
 restore();
 const s=data.settings;
@@ -470,7 +477,7 @@ function renderGrid(current,base){hideTip();const grid=$('unit-grid');grid.repla
 grid.setAttribute('aria-label',current.module_count+' modules remain in PR build; '+(base.module_count-current.module_count)+' removed versus upstream all detectors');
 items.forEach((item,index)=>{const cell=element('button',undefined,grid);cell.type='button';cell.className='cell'+(item.kept?'':' gone');cell.tabIndex=index===0?0:-1;cell.setAttribute('aria-label',item.name+(item.kept?' remains':' removed'));cell.setAttribute('aria-describedby','module-tooltip');const show=()=>{const rect=cell.getBoundingClientRect();showTip(item,current,base,rect.left,rect.bottom);};cell.addEventListener('pointermove',event=>showTip(item,current,base,event.clientX,event.clientY));cell.addEventListener('pointerleave',hideTip);cell.addEventListener('focus',()=>{for(const item of grid.children)item.tabIndex=-1;cell.tabIndex=0;show();});cell.addEventListener('blur',hideTip);cell.addEventListener('click',show);cell.addEventListener('keydown',event=>{const moves={ArrowRight:1,ArrowLeft:-1,ArrowDown:16,ArrowUp:-16,Home:-index,End:items.length-1-index};if(event.key in moves){event.preventDefault();const next=Math.max(0,Math.min(items.length-1,index+moves[event.key]));cell.tabIndex=-1;grid.children[next].tabIndex=0;grid.children[next].focus();}});});
 $('leg-stay').textContent=current.module_count+' remain in PR build';$('leg-gone').textContent=(base.module_count-current.module_count)+' removed versus all detectors';}
-function render(){const row=selected(),keys=['default','optout','unified'];$('metrics').replaceChildren();$('inputs').replaceChildren();
+function render(){const row=selected(),keys=['default','optout','unified'];$('comparison-target').value=row.id;$('metrics').replaceChildren();$('inputs').replaceChildren();
 const current=build(row,'unified'),base=build(row,'default'),optout=build(row,'optout');
 $('result-label').textContent=row.label+': '+current.module_count+' of '+base.module_count+' modules remain';
 renderGrid(current,base);
@@ -486,7 +493,7 @@ $('pr-baseline').textContent='With every detector compiled, the measured PR buil
 modules();}
 function hideCoach(){clearTimeout(coachTimer);$('selector-coach').hidden=true;$('selector-coach').classList.remove('is-visible');$('target').setAttribute('aria-describedby','grid-help');}
 const coachTimer=setTimeout(()=>{$('selector-coach').hidden=false;$('selector-coach').classList.add('is-visible');$('target').setAttribute('aria-describedby','selector-coach grid-help');},900);
-document.addEventListener('pointerdown',hideCoach,{once:true});$('target').addEventListener('pointerdown',hideCoach);$('target').addEventListener('keydown',hideCoach);$('target').addEventListener('change',()=>{hideCoach();render();save();});$('module-mode').addEventListener('change',()=>{modules();save();});$('filter').addEventListener('input',()=>{modules();save();});window.addEventListener('popstate',()=>{restore();render();});document.addEventListener('keydown',event=>{if(event.key==='Escape'){hideTip();hideCoach();}});window.addEventListener('scroll',hideTip,{passive:true});window.addEventListener('resize',hideTip);
+document.addEventListener('pointerdown',hideCoach,{once:true});$('target').addEventListener('pointerdown',hideCoach);$('target').addEventListener('keydown',hideCoach);$('target').addEventListener('change',()=>{hideCoach();render();save();});$('comparison-target').addEventListener('change',()=>{$('target').value=$('comparison-target').value;hideCoach();render();save();});$('module-mode').addEventListener('change',()=>{modules();save();});$('filter').addEventListener('input',()=>{modules();save();});window.addEventListener('popstate',()=>{restore();render();});document.addEventListener('keydown',event=>{if(event.key==='Escape'){hideTip();hideCoach();}});window.addEventListener('scroll',hideTip,{passive:true});window.addEventListener('resize',hideTip);
 function theme(value){if(value==='system')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=value;}
 try{const value=localStorage.getItem('footprint-theme');if(['system','light','dark'].includes(value))$('theme').value=value;}catch{}
 $('theme').addEventListener('change',()=>{theme($('theme').value);try{localStorage.setItem('footprint-theme',$('theme').value);}catch{}});theme($('theme').value);render();
