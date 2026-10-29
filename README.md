@@ -10,7 +10,7 @@ A resource detector adds information about where telemetry runs, such as a cloud
 
 Upstream already supports omitting detector implementations with build tags. The PR builds on that implementation/omitted-file pattern. It adds a global remove-all tag and individual enable tags, while retaining the existing omit tags.
 
-The additional dependency reduction comes from removing paths through always-compiled configuration: Kubernetes connection types, GCP resource helpers, and EC2 retry defaults. Enable tags and omit tags are selection mechanisms. Their syntax alone does not explain the measured reduction.
+The AWS retry-default fix (#52170) and lightweight Kubernetes configuration types (#52313) are now upstream and included in both sources. The parent PR’s remaining dependency reduction comes from moving GCP implementation helpers behind the GCP detector tags. Enable tags and omit tags are selection mechanisms. Their syntax alone does not explain the measured reduction.
 
 The report uses these build labels:
 
@@ -28,12 +28,12 @@ The comparison measures the combined changes. It does not separately quantify th
 
 | Source | Measured commit |
 | --- | --- |
-| Upstream main snapshot | cd37ea915187182b8c2270d512e3c4d805780d3f |
-| PR implementation | 1df29b559af87d5a58fb29253f73917ef278ed26 |
+| Upstream main snapshot | 6411c22b92c0b3819b709917e70c989798a3caca |
+| PR implementation | f2359adce5e5daf15b6987d6cd23bf83e6c80290 |
 
-These are pinned measurements, not live branch heads. Later test and documentation changes do not relabel them. Additional archived-source controls for EC2 and Oracle remain in the raw data and supplementary evidence.
+These are pinned measurements, not live branch heads. Later test and documentation changes do not relabel them. Previous October 15 measurements are preserved in the [interactive archive](https://oso-team.github.io/otelcol-build-footprint/archive-2026-10-15/) with their [original manifests](experiments/archive-2026-10-15/). They are not mixed into the refreshed comparison.
 
-[experiments/unified-tags/versions.lock.json](experiments/unified-tags/versions.lock.json) records Go 1.27.2, OCB/Collector experimental 0.163.0, Core stable 1.69.0, OpenTelemetry Go 1.47.0, and the build settings. Every run uses the same tools, component composition, resolved versions and Darwin/ARM64 platform. Linux/AMD64 OKE smoke tests are separate runtime evidence.
+[experiments/unified-tags/versions.lock.json](experiments/unified-tags/versions.lock.json) records Go 1.27.2, OCB/Collector experimental 0.164.0, Core stable 1.70.0, OpenTelemetry Go 1.47.0, and the build settings. Every run uses the same tools, component composition, resolved versions and Darwin/ARM64 platform. Linux/AMD64 OKE smoke tests are separate runtime evidence.
 
 The runner uses Python's standard library, Git, Go, and the [OpenTelemetry Collector Builder (OCB)](https://opentelemetry.io/docs/collector/extend/ocb/). The report uses browser standard libraries. No Python or JavaScript package installation is required.
 
@@ -48,7 +48,7 @@ python3 tools/locked_run.py \
   --source /path/to/contrib \
   --output /path/to/new-run \
   --go /path/to/go-1.27.2/bin/go \
-  --builder /path/to/ocb-0.163.0-built-with-go-1.27.2
+  --builder /path/to/ocb-0.164.0-built-with-go-1.27.2
 ~~~
 
 Repeat with upstream.json at its pinned source commit, using the same executables and settings. Pass --targets ec2,oraclecloud for a small first run. Internal manifest and dataset names such as unified and optout remain stable for reproducibility and existing shared URLs; they are not claims about what causes the savings.
@@ -67,9 +67,19 @@ python3 tools/compare.py \
   --site-index docs/index.html
 ~~~
 
-An optional --control /path/to/control-run retains an archived-source control at its recorded commit. This is supplementary evidence, not a fourth primary comparison.
+The current comparison uses only the two refreshed source runs. Older controls remain in the October 15 archive with their original versions and source revisions.
 
 The comparison validates each selected target set with the publication contract. It requires identical tools, component composition and resolved module versions across runs. It rejects local paths in exported data.
+
+## Binary composition checks
+
+All 84 newly built executables are inspected before publication. `components` verifies that the expected OTLP receiver, RDP and debug exporter are available. It does not list nested resource detectors. The runner also checks each executable’s embedded build tags and Go’s selected implementation/stub files for all 32 detector implementations.
+
+The PR’s debug startup log includes `compiled_detectors`. A bounded local probe uses `detectors: []`, `retry.enabled: false` and debug logging. It checks the reported names exactly, including the deprecated `k8snode` alias when `k8s_api` is included. No detector is configured, so no cloud constructor or metadata detection runs. The resulting `no detectors succeeded` startup error is intentional; this probe is not a readiness test.
+
+Upstream does not expose the per-detector runtime list. Its binaries pass the components, embedded-tag and source-file checks; the report does not claim runtime inventory reporting for upstream. Local raw logs and selected-file receipts are retained with the run. Portable inspection summaries are embedded alongside each binary checksum in `docs/comparison.json` and shown in the build detail view. Publication rejects missing or failed required inspections.
+
+These checks verify composition, not behavior in each cloud environment. The separate real-OKE default/Oracle-only smoke tests remain functional evidence, not part of this Darwin/arm64 size comparison.
 
 ## Measurement definitions
 

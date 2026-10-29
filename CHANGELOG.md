@@ -2,6 +2,8 @@
 
 ## 2026-10-29
 
+- Refresh all 41 matched detector selections and both all-detector baselines; display per-binary inspection evidence and credit merged AWS/Kubernetes fixes to upstream main. Preserve the previous interactive report in an October 15 archive.
+
 - Verify every measured binary with the components command, embedded build tags and implementation/stub file selection; additionally check the PR runtime detector inventory exactly. Reject publication when required inspection evidence is missing or fails.
 - Pin the refreshed experiment to current upstream and PR commits, OCB/Core 0.164.0, Core stable 1.70.0 and Go 1.27.2; retain the previous input manifests.
 
