@@ -105,6 +105,10 @@ def run(args: argparse.Namespace) -> None:
             if '\tdep\tgo.opentelemetry.io/'+module+'\t'+lock['collector_experimental']+'\t' not in metadata:
                 raise ValueError('embedded Collector module drift: '+module)
         receipts[binary.parent.parent.name] = {'sha256': digest(binary), 'bytes': binary.stat().st_size, 'build_metadata': metadata}
+    if lock.get('require_detector_inspection'):
+        inspections = json.loads((output/'binary-inspections.json').read_text())
+        for name, receipt in receipts.items():
+            receipt['inspection'] = inspections[name]
     footprint.write_json(output/'binary-receipts.json', receipts)
     print('PASS source, tool, module, runner, environment and binary provenance', flush=True)
 

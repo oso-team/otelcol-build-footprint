@@ -85,6 +85,11 @@ class ComparisonEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'SDK'):
             self.load()
 
+    def test_rejects_missing_detector_inspection_when_required(self):
+        self.lock['require_detector_inspection'] = True
+        with self.assertRaisesRegex(ValueError, 'detector inspection'):
+            self.load()
+
     def test_rejects_changed_binary_metadata(self):
         self.change('binary-receipts.json', lambda d: d['full'].update(build_metadata=d['full']['build_metadata'].replace('CGO_ENABLED=0', 'CGO_ENABLED=1')))
         with self.assertRaisesRegex(ValueError, 'build setting'):

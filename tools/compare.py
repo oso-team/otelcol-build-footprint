@@ -60,6 +60,15 @@ def load_run(directory: Path, lock: dict, lock_hash: str) -> dict:
         receipt = receipts[entry['id']]
         if receipt['bytes'] != entry['binary_bytes']:
             raise ValueError('binary size disagrees with its receipt')
+        if lock.get('require_detector_inspection'):
+            from inspect_binary import expected_detectors, verify_inventory
+            inspection = receipt.get('inspection', {})
+            if not all(inspection.get(key) is True for key in ('passed', 'source_file_selection_verified', 'embedded_tags_verified', 'components_command_verified')):
+                raise ValueError('missing or failed detector inspection')
+            expected = expected_detectors(entry, manifest['detector_catalog'])
+            verify_inventory(expected, inspection.get('expected_detectors'))
+            if manifest['inspection']['runtime_inventory']:
+                verify_inventory(expected, inspection.get('reported_compiled_detectors'))
         metadata = receipt['build_metadata']
         if ': go' + lock['go_version'] + '\n' not in metadata:
             raise ValueError('embedded binary Go version differs')
@@ -69,7 +78,7 @@ def load_run(directory: Path, lock: dict, lock_hash: str) -> dict:
                 raise ValueError('embedded binary build setting differs: ' + setting)
         if sha256(directory / 'work' / entry['id'] / 'dist' / manifest['builder']['dist']['name']) != receipt['sha256']:
             raise ValueError('binary checksum differs')
-    public_receipts = {name: {key: receipt[key] for key in ('sha256', 'bytes')} for name, receipt in receipts.items()}
+    public_receipts = {name: {key: receipt[key] for key in ('sha256', 'bytes', 'inspection') if key in receipt} for name, receipt in receipts.items()}
     return {'manifest': manifest, 'report': report, 'binary_receipts': public_receipts,
             'tool_sha256': before['tool_sha256'],
             'resolved_versions': modules,

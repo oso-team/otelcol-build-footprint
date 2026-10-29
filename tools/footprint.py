@@ -209,6 +209,7 @@ def run(args: argparse.Namespace) -> None:
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     entries = []
+    inspections = {}
     for target in targets:
         target_dir = output / "work" / target["id"]
         target_dir.mkdir(parents=True, exist_ok=True)
@@ -223,6 +224,12 @@ def run(args: argparse.Namespace) -> None:
                                                    manifest["builder"]["dist"]["name"], env, args.go)
             evidence_dir = output / "evidence" / target["id"]
             evidence_dir.mkdir(parents=True, exist_ok=True)
+            if manifest.get("inspection"):
+                from inspect_binary import inspect
+                inspections[target["id"]] = inspect(
+                    target_dir / "dist" / manifest["builder"]["dist"]["name"],
+                    target, manifest, source, env, args.go, evidence_dir)
+                write_json(output / "binary-inspections.json", inspections)
             portable = config.replace(str(source), "${PUBLIC_CONTRIB_CHECKOUT}")
             portable = portable.replace(str(target_dir / "dist"), "${BUILD_OUTPUT}")
             (evidence_dir / "builder.yaml").write_text(portable, encoding="utf-8")
