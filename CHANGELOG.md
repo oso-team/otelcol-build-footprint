@@ -2,6 +2,8 @@
 
 ## 2026-10-29
 
+- Add a controlled three-stage contribution comparison: all detectors, omission tags with SDK-coupled configs, and the completed lightweight-config/opt-in work. Publish the exact reconstruction patch and retain the current-main-only comparison separately. Reuse unchanged PR binaries with full receipt revalidation.
+
 - Refresh all 41 matched detector selections and both all-detector baselines; display per-binary inspection evidence and credit merged AWS/Kubernetes fixes to upstream main. Preserve the previous interactive report in an October 15 archive.
 
 - Verify every measured binary with the components command, embedded build tags and implementation/stub file selection; additionally check the PR runtime detector inventory exactly. Reject publication when required inspection evidence is missing or fails.
