@@ -1,0 +1,590 @@
+diff --git a/internal/k8sconfig/config_conversion.go b/internal/k8sconfig/config_conversion.go
+deleted file mode 100644
+index d0bdc966ad3..00000000000
+--- a/internal/k8sconfig/config_conversion.go
++++ /dev/null
+@@ -1,17 +0,0 @@
+-// Copyright The OpenTelemetry Authors
+-// SPDX-License-Identifier: Apache-2.0
+-
+-package k8sconfig // import "github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig"
+-
+-import "github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig/k8sconfigtypes"
+-
+-// FromConfigTypes converts dependency-light detector settings to the existing
+-// client configuration type without changing its identity for other components.
+-func FromConfigTypes(cfg k8sconfigtypes.APIConfig) APIConfig {
+-	return APIConfig{
+-		AuthType:     AuthType(cfg.AuthType),
+-		Context:      cfg.Context,
+-		KubeAPIQPS:   cfg.KubeAPIQPS,
+-		KubeAPIBurst: cfg.KubeAPIBurst,
+-	}
+-}
+diff --git a/internal/k8sconfig/config_conversion_test.go b/internal/k8sconfig/config_conversion_test.go
+deleted file mode 100644
+index 22f4be00707..00000000000
+--- a/internal/k8sconfig/config_conversion_test.go
++++ /dev/null
+@@ -1,100 +0,0 @@
+-// Copyright The OpenTelemetry Authors
+-// SPDX-License-Identifier: Apache-2.0
+-
+-package k8sconfig
+-
+-import (
+-	"reflect"
+-	"testing"
+-
+-	"github.com/stretchr/testify/assert"
+-	"github.com/stretchr/testify/require"
+-
+-	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig/k8sconfigtypes"
+-)
+-
+-// Keep the dependency-light copy aligned with the original configuration while
+-// preserving the original defined types for existing consumers.
+-func TestAPIConfigTypesMatch(t *testing.T) {
+-	original := reflect.TypeFor[APIConfig]()
+-	lightweight := reflect.TypeFor[k8sconfigtypes.APIConfig]()
+-	assert.Equal(t, original.NumField(), lightweight.NumField(),
+-		"keep APIConfig fields in k8sconfig and k8sconfigtypes aligned; update FromConfigTypes and its tests when adding a field")
+-
+-	for originalField := range original.Fields() {
+-		t.Run(originalField.Name, func(t *testing.T) {
+-			lightweightField, ok := lightweight.FieldByName(originalField.Name)
+-			require.True(t, ok, "add the matching field to k8sconfigtypes.APIConfig and update FromConfigTypes and its tests")
+-
+-			expectedType := originalField.Type
+-			if expectedType == reflect.TypeFor[AuthType]() {
+-				expectedType = reflect.TypeFor[k8sconfigtypes.AuthType]()
+-			}
+-			assert.Equal(t, expectedType, lightweightField.Type,
+-				"keep APIConfig field types aligned and update FromConfigTypes and its tests")
+-			assert.Equal(t, originalField.Tag, lightweightField.Tag,
+-				"keep APIConfig struct tags aligned so both types use the same configuration keys")
+-		})
+-	}
+-}
+-
+-func TestAuthTypesMatch(t *testing.T) {
+-	tests := []struct {
+-		name        string
+-		original    AuthType
+-		lightweight k8sconfigtypes.AuthType
+-	}{
+-		{"none", AuthTypeNone, k8sconfigtypes.AuthTypeNone},
+-		{"serviceAccount", AuthTypeServiceAccount, k8sconfigtypes.AuthTypeServiceAccount},
+-		{"kubeConfig", AuthTypeKubeConfig, k8sconfigtypes.AuthTypeKubeConfig},
+-		{"tls", AuthTypeTLS, k8sconfigtypes.AuthTypeTLS},
+-	}
+-	assert.Len(t, authTypes, len(tests),
+-		"update both authentication definitions and this compatibility table when supported auth types change")
+-	for _, tt := range tests {
+-		t.Run(tt.name, func(t *testing.T) {
+-			assert.Equal(t, string(tt.original), string(tt.lightweight),
+-				"keep matching authentication constants in k8sconfig and k8sconfigtypes aligned")
+-			assert.True(t, authTypes[tt.original], "keep the compatibility table aligned with supported authentication types")
+-			assert.NoError(t, (k8sconfigtypes.APIConfig{AuthType: tt.lightweight}).Validate())
+-		})
+-	}
+-}
+-
+-func TestFromConfigTypes(t *testing.T) {
+-	for _, authType := range []k8sconfigtypes.AuthType{
+-		k8sconfigtypes.AuthTypeNone,
+-		k8sconfigtypes.AuthTypeServiceAccount,
+-		k8sconfigtypes.AuthTypeKubeConfig,
+-		k8sconfigtypes.AuthTypeTLS,
+-	} {
+-		t.Run(string(authType), func(t *testing.T) {
+-			cfg := k8sconfigtypes.APIConfig{
+-				AuthType:     authType,
+-				Context:      "custom-context",
+-				KubeAPIQPS:   25.5,
+-				KubeAPIBurst: 50,
+-			}
+-			converted := FromConfigTypes(cfg)
+-			assert.Equal(t, APIConfig{
+-				AuthType:     AuthType(authType),
+-				Context:      "custom-context",
+-				KubeAPIQPS:   25.5,
+-				KubeAPIBurst: 50,
+-			}, converted)
+-			assert.NoError(t, converted.Validate())
+-		})
+-	}
+-}
+-
+-func TestFromConfigTypesPreservesValidation(t *testing.T) {
+-	for _, cfg := range []k8sconfigtypes.APIConfig{
+-		{},
+-		{AuthType: "invalid"},
+-		{AuthType: k8sconfigtypes.AuthTypeServiceAccount},
+-		{AuthType: k8sconfigtypes.AuthTypeServiceAccount, KubeAPIQPS: -1},
+-		{AuthType: k8sconfigtypes.AuthTypeServiceAccount, KubeAPIBurst: -1},
+-	} {
+-		assert.Equal(t, cfg.Validate(), FromConfigTypes(cfg).Validate())
+-	}
+-}
+diff --git a/internal/k8sconfig/k8sconfigtypes/config.go b/internal/k8sconfig/k8sconfigtypes/config.go
+deleted file mode 100644
+index 67cd1290512..00000000000
+--- a/internal/k8sconfig/k8sconfigtypes/config.go
++++ /dev/null
+@@ -1,71 +0,0 @@
+-// Copyright The OpenTelemetry Authors
+-// SPDX-License-Identifier: Apache-2.0
+-
+-// Package k8sconfigtypes holds dependency-light configuration types for
+-// connecting to the Kubernetes API. Client constructors that consume these
+-// types live in the parent k8sconfig package.
+-package k8sconfigtypes // import "github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig/k8sconfigtypes"
+-
+-import (
+-	"errors"
+-	"fmt"
+-)
+-
+-// AuthType describes the type of authentication to use for the K8s API.
+-type AuthType string
+-
+-const (
+-	// AuthTypeNone means no auth is required.
+-	AuthTypeNone AuthType = "none"
+-	// AuthTypeServiceAccount means to use the built-in service account that
+-	// K8s automatically provisions for each pod.
+-	AuthTypeServiceAccount AuthType = "serviceAccount"
+-	// AuthTypeKubeConfig uses local credentials like those used by kubectl.
+-	AuthTypeKubeConfig AuthType = "kubeConfig"
+-	// AuthTypeTLS indicates that client TLS auth is desired.
+-	AuthTypeTLS AuthType = "tls"
+-)
+-
+-var authTypes = map[AuthType]bool{
+-	AuthTypeNone:           true,
+-	AuthTypeServiceAccount: true,
+-	AuthTypeKubeConfig:     true,
+-	AuthTypeTLS:            true,
+-}
+-
+-// APIConfig contains options relevant to connecting to the K8s API.
+-type APIConfig struct {
+-	// How to authenticate to the K8s API server. This can be one of `none`
+-	// (for no auth), `serviceAccount` (to use the standard service account
+-	// token provided to the agent pod), or `kubeConfig` to use credentials
+-	// from `~/.kube/config`.
+-	AuthType AuthType `mapstructure:"auth_type"`
+-
+-	// When using auth_type `kubeConfig`, override the current context.
+-	Context string `mapstructure:"context"`
+-
+-	// KubeAPIQPS is the maximum number of queries per second to the Kubernetes API.
+-	// Uses client-go's default (5) if unset. Increase if you see client-side throttling warnings.
+-	KubeAPIQPS float32 `mapstructure:"kube_api_qps"`
+-
+-	// KubeAPIBurst is the maximum burst of requests to the Kubernetes API.
+-	// Uses client-go's default (10) if unset. Increase if you see client-side throttling warnings.
+-	KubeAPIBurst int `mapstructure:"kube_api_burst"`
+-}
+-
+-// Validate validates the Kubernetes API config.
+-func (c APIConfig) Validate() error {
+-	if !authTypes[c.AuthType] {
+-		return fmt.Errorf("invalid authType for kubernetes: %v", c.AuthType)
+-	}
+-
+-	if c.KubeAPIQPS < 0 {
+-		return errors.New("kube_api_qps must be greater than 0")
+-	}
+-
+-	if c.KubeAPIBurst < 0 {
+-		return errors.New("kube_api_burst must be greater than 0")
+-	}
+-
+-	return nil
+-}
+diff --git a/internal/k8sconfig/k8sconfigtypes/config.schema.yaml b/internal/k8sconfig/k8sconfigtypes/config.schema.yaml
+deleted file mode 100644
+index 283c661d337..00000000000
+--- a/internal/k8sconfig/k8sconfigtypes/config.schema.yaml
++++ /dev/null
+@@ -1,21 +0,0 @@
+-$defs:
+-  api_config:
+-    description: APIConfig contains options relevant to connecting to the K8s API.
+-    type: object
+-    properties:
+-      auth_type:
+-        description: How to authenticate to the K8s API server. This can be one of `none` (for no auth), `serviceAccount` (to use the standard service account token provided to the agent pod), or `kubeConfig` to use credentials from `~/.kube/config`.
+-        $ref: auth_type
+-      context:
+-        description: When using auth_type `kubeConfig`, override the current context.
+-        type: string
+-      kube_api_burst:
+-        description: KubeAPIBurst is the maximum burst of requests to the Kubernetes API. Uses client-go's default (10) if unset. Increase if you see client-side throttling warnings.
+-        type: integer
+-      kube_api_qps:
+-        description: KubeAPIQPS is the maximum number of queries per second to the Kubernetes API. Uses client-go's default (5) if unset. Increase if you see client-side throttling warnings.
+-        type: number
+-        x-customType: float32
+-  auth_type:
+-    description: AuthType describes the type of authentication to use for the K8s API.
+-    type: string
+diff --git a/processor/resourcedetectionprocessor/internal/aws/ec2/config.go b/processor/resourcedetectionprocessor/internal/aws/ec2/config.go
+index ea2021ae44c..ec72fb3c09c 100644
+--- a/processor/resourcedetectionprocessor/internal/aws/ec2/config.go
++++ b/processor/resourcedetectionprocessor/internal/aws/ec2/config.go
+@@ -6,16 +6,9 @@ package ec2 // import "github.com/open-telemetry/opentelemetry-collector-contrib
+ import (
+ 	"time"
+ 
+-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/aws/ec2/internal/metadata"
+-)
++	"github.com/aws/aws-sdk-go-v2/aws/retry"
+ 
+-// These mirror aws-sdk-go-v2's retry.DefaultMaxAttempts and retry.DefaultMaxBackoff.
+-// They are declared locally so that this config package does not import the AWS SDK
+-// just for two constants, which would pull the SDK into every build's config schema.
+-// TestDefaultRetrySettingsMatchSDK checks for drift when the SDK is upgraded.
+-const (
+-	defaultMaxAttempts = 3
+-	defaultMaxBackoff  = 20 * time.Second
++	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/aws/ec2/internal/metadata"
+ )
+ 
+ // Config defines user-specified configurations unique to the EC2 detector
+@@ -42,7 +35,7 @@ func CreateDefaultConfig() Config {
+ 	return Config{
+ 		Tags:               []string{},
+ 		ResourceAttributes: metadata.DefaultResourceAttributesConfig(),
+-		MaxAttempts:        defaultMaxAttempts,
+-		MaxBackoff:         defaultMaxBackoff,
++		MaxAttempts:        retry.DefaultMaxAttempts,
++		MaxBackoff:         retry.DefaultMaxBackoff,
+ 	}
+ }
+diff --git a/processor/resourcedetectionprocessor/internal/aws/ec2/config_test.go b/processor/resourcedetectionprocessor/internal/aws/ec2/config_test.go
+deleted file mode 100644
+index 1f1323e3324..00000000000
+--- a/processor/resourcedetectionprocessor/internal/aws/ec2/config_test.go
++++ /dev/null
+@@ -1,22 +0,0 @@
+-// Copyright The OpenTelemetry Authors
+-// SPDX-License-Identifier: Apache-2.0
+-
+-package ec2
+-
+-import (
+-	"testing"
+-
+-	"github.com/aws/aws-sdk-go-v2/aws/retry"
+-	"github.com/stretchr/testify/assert"
+-)
+-
+-// Keep local defaults aligned with the selected SDK version. If an upgrade changes
+-// these values, review the change and update the constants in config.go if intended.
+-// SDK definitions: https://github.com/aws/aws-sdk-go-v2/blob/v1.47.1/aws/retry/standard.go#L26-L33.
+-func TestDefaultRetrySettingsMatchSDK(t *testing.T) {
+-	cfg := CreateDefaultConfig()
+-	assert.Equal(t, retry.DefaultMaxAttempts, cfg.MaxAttempts,
+-		"review the selected AWS SDK's retry.DefaultMaxAttempts and update defaultMaxAttempts in config.go if the change is intended")
+-	assert.Equal(t, retry.DefaultMaxBackoff, cfg.MaxBackoff,
+-		"review the selected AWS SDK's retry.DefaultMaxBackoff and update defaultMaxBackoff in config.go if the change is intended")
+-}
+diff --git a/processor/resourcedetectionprocessor/internal/aws/eks/config.go b/processor/resourcedetectionprocessor/internal/aws/eks/config.go
+index 2adadf7ae97..741a3a76f1d 100644
+--- a/processor/resourcedetectionprocessor/internal/aws/eks/config.go
++++ b/processor/resourcedetectionprocessor/internal/aws/eks/config.go
+@@ -4,19 +4,19 @@
+ package eks // import "github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/aws/eks"
+ 
+ import (
+-	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig/k8sconfigtypes"
++	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig"
+ 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/aws/eks/internal/metadata"
+ )
+ 
+ type Config struct {
+-	APIConfig          k8sconfigtypes.APIConfig          `mapstructure:",squash"`
++	APIConfig          k8sconfig.APIConfig               `mapstructure:",squash"`
+ 	ResourceAttributes metadata.ResourceAttributesConfig `mapstructure:"resource_attributes"`
+ 	NodeFromEnvVar     string                            `mapstructure:"node_from_env_var"`
+ }
+ 
+ func CreateDefaultConfig() Config {
+ 	return Config{
+-		APIConfig:          k8sconfigtypes.APIConfig{AuthType: k8sconfigtypes.AuthTypeServiceAccount},
++		APIConfig:          k8sconfig.APIConfig{AuthType: k8sconfig.AuthTypeServiceAccount},
+ 		ResourceAttributes: metadata.DefaultResourceAttributesConfig(),
+ 	}
+ }
+diff --git a/processor/resourcedetectionprocessor/internal/aws/eks/config.schema.yaml b/processor/resourcedetectionprocessor/internal/aws/eks/config.schema.yaml
+index 659c307c19e..d41a6e8b860 100644
+--- a/processor/resourcedetectionprocessor/internal/aws/eks/config.schema.yaml
++++ b/processor/resourcedetectionprocessor/internal/aws/eks/config.schema.yaml
+@@ -5,4 +5,4 @@ properties:
+   resource_attributes:
+     $ref: ./internal/metadata.resource_attributes_config
+ allOf:
+-  - $ref: /internal/k8sconfig/k8sconfigtypes.api_config
++  - $ref: /internal/k8sconfig.api_config
+diff --git a/processor/resourcedetectionprocessor/internal/aws/eks/detector.go b/processor/resourcedetectionprocessor/internal/aws/eks/detector.go
+index 33efd7b03c4..6a8c6dacfd6 100644
+--- a/processor/resourcedetectionprocessor/internal/aws/eks/detector.go
++++ b/processor/resourcedetectionprocessor/internal/aws/eks/detector.go
+@@ -21,7 +21,6 @@ import (
+ 	conventions "go.opentelemetry.io/otel/semconv/v1.43.0"
+ 	"go.uber.org/zap"
+ 
+-	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig"
+ 	imdsprovider "github.com/open-telemetry/opentelemetry-collector-contrib/internal/metadataproviders/aws/ec2"
+ 	apiprovider "github.com/open-telemetry/opentelemetry-collector-contrib/internal/metadataproviders/aws/eks"
+ 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal"
+@@ -84,7 +83,7 @@ func NewDetector(set processor.Settings, dcfg internal.DetectorConfig, failOnMis
+ 	}
+ 
+ 	nodeName := os.Getenv(cfg.NodeFromEnvVar)
+-	apiProvider, err := apiprovider.NewProvider(awsConfig, nodeName, k8sconfig.FromConfigTypes(cfg.APIConfig))
++	apiProvider, err := apiprovider.NewProvider(awsConfig, nodeName, cfg.APIConfig)
+ 	if err != nil {
+ 		return nil, err
+ 	}
+diff --git a/processor/resourcedetectionprocessor/internal/aws/eks/detector_test.go b/processor/resourcedetectionprocessor/internal/aws/eks/detector_test.go
+index 1b67837e7b6..8dd16513b92 100644
+--- a/processor/resourcedetectionprocessor/internal/aws/eks/detector_test.go
++++ b/processor/resourcedetectionprocessor/internal/aws/eks/detector_test.go
+@@ -20,7 +20,7 @@ import (
+ 	"go.uber.org/zap"
+ 	"go.uber.org/zap/zaptest"
+ 
+-	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig/k8sconfigtypes"
++	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig"
+ 	apiprovider "github.com/open-telemetry/opentelemetry-collector-contrib/internal/metadataproviders/aws/eks"
+ 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/aws/eks/internal/metadata"
+ )
+@@ -710,7 +710,7 @@ func TestNewDetectorWithAPIConfig(t *testing.T) {
+ 	t.Setenv("KUBERNETES_SERVICE_HOST", "127.0.0.1")
+ 	t.Setenv("KUBERNETES_SERVICE_PORT", "6443")
+ 	cfg := CreateDefaultConfig()
+-	cfg.APIConfig.AuthType = k8sconfigtypes.AuthTypeNone
++	cfg.APIConfig.AuthType = k8sconfig.AuthTypeNone
+ 
+ 	d, err := NewDetector(processortest.NewNopSettings(processortest.NopType), cfg, false)
+ 	require.NoError(t, err)
+@@ -753,7 +753,7 @@ func TestIsIMDSAccessible(t *testing.T) {
+ 
+ func TestCreateDefaultConfig(t *testing.T) {
+ 	assert.Equal(t, Config{
+-		APIConfig:          k8sconfigtypes.APIConfig{AuthType: k8sconfigtypes.AuthTypeServiceAccount},
++		APIConfig:          k8sconfig.APIConfig{AuthType: k8sconfig.AuthTypeServiceAccount},
+ 		ResourceAttributes: metadata.DefaultResourceAttributesConfig(),
+ 	}, CreateDefaultConfig())
+ }
+diff --git a/processor/resourcedetectionprocessor/internal/k8sapi/config.go b/processor/resourcedetectionprocessor/internal/k8sapi/config.go
+index 35cff4822df..b2d546b30a5 100644
+--- a/processor/resourcedetectionprocessor/internal/k8sapi/config.go
++++ b/processor/resourcedetectionprocessor/internal/k8sapi/config.go
+@@ -7,12 +7,12 @@ import (
+ 	"errors"
+ 	"os"
+ 
+-	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig/k8sconfigtypes"
++	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig"
+ 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/k8sapi/internal/metadata"
+ )
+ 
+ type Config struct {
+-	APIConfig k8sconfigtypes.APIConfig `mapstructure:",squash"`
++	APIConfig k8sconfig.APIConfig `mapstructure:",squash"`
+ 	// NodeFromEnv can be used to extract the node name from an environment
+ 	// variable. The value must be the name of the environment variable.
+ 	// This is useful when the node a Otel agent will run on cannot be
+@@ -50,7 +50,7 @@ func (c *Config) UpdateDefaults() error {
+ 
+ func CreateDefaultConfig() Config {
+ 	return Config{
+-		APIConfig:          k8sconfigtypes.APIConfig{AuthType: k8sconfigtypes.AuthTypeServiceAccount},
++		APIConfig:          k8sconfig.APIConfig{AuthType: k8sconfig.AuthTypeServiceAccount},
+ 		ResourceAttributes: metadata.DefaultResourceAttributesConfig(),
+ 	}
+ }
+diff --git a/processor/resourcedetectionprocessor/internal/k8sapi/config.schema.yaml b/processor/resourcedetectionprocessor/internal/k8sapi/config.schema.yaml
+index 21914ee0c65..6b80ea1ed4c 100644
+--- a/processor/resourcedetectionprocessor/internal/k8sapi/config.schema.yaml
++++ b/processor/resourcedetectionprocessor/internal/k8sapi/config.schema.yaml
+@@ -6,4 +6,4 @@ properties:
+   resource_attributes:
+     $ref: ./internal/metadata.resource_attributes_config
+ allOf:
+-  - $ref: /internal/k8sconfig/k8sconfigtypes.api_config
++  - $ref: /internal/k8sconfig.api_config
+diff --git a/processor/resourcedetectionprocessor/internal/k8sapi/k8s.go b/processor/resourcedetectionprocessor/internal/k8sapi/k8s.go
+index bda73232044..a914d0de44c 100644
+--- a/processor/resourcedetectionprocessor/internal/k8sapi/k8s.go
++++ b/processor/resourcedetectionprocessor/internal/k8sapi/k8s.go
+@@ -16,7 +16,6 @@ import (
+ 	"go.uber.org/zap"
+ 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+ 
+-	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig"
+ 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/metadataproviders/k8snode"
+ 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal"
+ 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/k8sapi/internal/metadata"
+@@ -38,7 +37,7 @@ func NewDetector(set processor.Settings, dcfg internal.DetectorConfig, failOnMis
+ 		return nil, err
+ 	}
+ 	nodeName := os.Getenv(cfg.NodeFromEnvVar)
+-	k8snodeProvider, err := k8snode.NewProvider(nodeName, k8sconfig.FromConfigTypes(cfg.APIConfig))
++	k8snodeProvider, err := k8snode.NewProvider(nodeName, cfg.APIConfig)
+ 	if err != nil {
+ 		return nil, fmt.Errorf("failed creating k8snode detector: %w", err)
+ 	}
+diff --git a/processor/resourcedetectionprocessor/internal/k8sapi/k8s_test.go b/processor/resourcedetectionprocessor/internal/k8sapi/k8s_test.go
+index 055682ac9e4..3d068b61078 100644
+--- a/processor/resourcedetectionprocessor/internal/k8sapi/k8s_test.go
++++ b/processor/resourcedetectionprocessor/internal/k8sapi/k8s_test.go
+@@ -18,7 +18,7 @@ import (
+ 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+ 	"k8s.io/apimachinery/pkg/runtime/schema"
+ 
+-	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig/k8sconfigtypes"
++	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig"
+ 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/metadataproviders/k8snode"
+ 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/k8sapi/internal/metadata"
+ )
+@@ -56,7 +56,7 @@ func TestDetect(t *testing.T) {
+ 	md.On("ClusterUID").Return("a7b3c1d2-e4f5-6789-abcd-ef0123456789", nil)
+ 	cfg := CreateDefaultConfig()
+ 	// set k8s cluster env variables and auth type to create a dummy API client
+-	cfg.APIConfig.AuthType = k8sconfigtypes.AuthTypeNone
++	cfg.APIConfig.AuthType = k8sconfig.AuthTypeNone
+ 	t.Setenv("KUBERNETES_SERVICE_HOST", "127.0.0.1")
+ 	t.Setenv("KUBERNETES_SERVICE_PORT", "6443")
+ 	t.Setenv("K8S_NODE_NAME", "mainNode")
+@@ -155,7 +155,7 @@ func TestDetectClusterUIDSkipsOnForbidden(t *testing.T) {
+ 	forbiddenErr := k8serrors.NewForbidden(schema.GroupResource{Resource: "namespaces"}, "kube-system", errors.New("forbidden"))
+ 	md.On("ClusterUID").Return("", forbiddenErr)
+ 	cfg := CreateDefaultConfig()
+-	cfg.APIConfig.AuthType = k8sconfigtypes.AuthTypeNone
++	cfg.APIConfig.AuthType = k8sconfig.AuthTypeNone
+ 	t.Setenv("KUBERNETES_SERVICE_HOST", "127.0.0.1")
+ 	t.Setenv("KUBERNETES_SERVICE_PORT", "6443")
+ 	t.Setenv("K8S_NODE_NAME", "mainNode")
+@@ -180,7 +180,7 @@ func TestDetectClusterUIDErrorsOnTransientFailure(t *testing.T) {
+ 	md.On("NodeName").Return("mainNode", nil)
+ 	md.On("ClusterUID").Return("", errors.New("connection refused"))
+ 	cfg := CreateDefaultConfig()
+-	cfg.APIConfig.AuthType = k8sconfigtypes.AuthTypeNone
++	cfg.APIConfig.AuthType = k8sconfig.AuthTypeNone
+ 	t.Setenv("KUBERNETES_SERVICE_HOST", "127.0.0.1")
+ 	t.Setenv("KUBERNETES_SERVICE_PORT", "6443")
+ 	t.Setenv("K8S_NODE_NAME", "mainNode")
+@@ -201,7 +201,7 @@ func TestDetectDisabledResourceAttributes(t *testing.T) {
+ 	cfg.ResourceAttributes.K8sNodeName.Enabled = false
+ 	cfg.ResourceAttributes.K8sClusterUID.Enabled = false
+ 	// set k8s cluster env variables and auth type to create a dummy API client
+-	cfg.APIConfig.AuthType = k8sconfigtypes.AuthTypeNone
++	cfg.APIConfig.AuthType = k8sconfig.AuthTypeNone
+ 	t.Setenv("KUBERNETES_SERVICE_HOST", "127.0.0.1")
+ 	t.Setenv("KUBERNETES_SERVICE_PORT", "6443")
+ 	t.Setenv("K8S_NODE_NAME", "mainNode")
+@@ -286,7 +286,7 @@ func TestNewDetectorErrors(t *testing.T) {
+ 
+ func TestNewDeprecatedDetector(t *testing.T) {
+ 	cfg := CreateDefaultConfig()
+-	cfg.APIConfig.AuthType = k8sconfigtypes.AuthTypeNone
++	cfg.APIConfig.AuthType = k8sconfig.AuthTypeNone
+ 	t.Setenv("KUBERNETES_SERVICE_HOST", "127.0.0.1")
+ 	t.Setenv("KUBERNETES_SERVICE_PORT", "6443")
+ 	t.Setenv("K8S_NODE_NAME", "mainNode")
+diff --git a/processor/resourcedetectionprocessor/internal/kubeadm/config.go b/processor/resourcedetectionprocessor/internal/kubeadm/config.go
+index f836946c038..d5cab07be92 100644
+--- a/processor/resourcedetectionprocessor/internal/kubeadm/config.go
++++ b/processor/resourcedetectionprocessor/internal/kubeadm/config.go
+@@ -4,18 +4,18 @@
+ package kubeadm // import "github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/kubeadm"
+ 
+ import (
+-	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig/k8sconfigtypes"
++	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig"
+ 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor/internal/kubeadm/internal/metadata"
+ )
+ 
+ type Config struct {
+-	APIConfig          k8sconfigtypes.APIConfig          `mapstructure:",squash"`
++	APIConfig          k8sconfig.APIConfig               `mapstructure:",squash"`
+ 	ResourceAttributes metadata.ResourceAttributesConfig `mapstructure:"resource_attributes"`
+ }
+ 
+ func CreateDefaultConfig() Config {
+ 	return Config{
+-		APIConfig:          k8sconfigtypes.APIConfig{AuthType: k8sconfigtypes.AuthTypeServiceAccount},
++		APIConfig:          k8sconfig.APIConfig{AuthType: k8sconfig.AuthTypeServiceAccount},
+ 		ResourceAttributes: metadata.DefaultResourceAttributesConfig(),
+ 	}
+ }
+diff --git a/processor/resourcedetectionprocessor/internal/kubeadm/config.schema.yaml b/processor/resourcedetectionprocessor/internal/kubeadm/config.schema.yaml
+index 8acea7eeb89..0105e370ae6 100644
+--- a/processor/resourcedetectionprocessor/internal/kubeadm/config.schema.yaml
++++ b/processor/resourcedetectionprocessor/internal/kubeadm/config.schema.yaml
+@@ -3,4 +3,4 @@ properties:
+   resource_attributes:
+     $ref: ./internal/metadata.resource_attributes_config
+ allOf:
+-  - $ref: /internal/k8sconfig/k8sconfigtypes.api_config
++  - $ref: /internal/k8sconfig.api_config
+diff --git a/processor/resourcedetectionprocessor/internal/kubeadm/kubeadm.go b/processor/resourcedetectionprocessor/internal/kubeadm/kubeadm.go
+index caa93066f13..fbff8a0e8ca 100644
+--- a/processor/resourcedetectionprocessor/internal/kubeadm/kubeadm.go
++++ b/processor/resourcedetectionprocessor/internal/kubeadm/kubeadm.go
+@@ -42,7 +42,7 @@ func NewDetector(set processor.Settings, dcfg internal.DetectorConfig, failOnMis
+ 
+ 	// The client is built here rather than by the SDK detector so that the configured
+ 	// auth_type and kubeconfig keep applying.
+-	client, err := makeClient(k8sconfig.FromConfigTypes(cfg.APIConfig))
++	client, err := makeClient(cfg.APIConfig)
+ 	if err != nil {
+ 		return nil, fmt.Errorf("failed creating Kubernetes client: %w", err)
+ 	}
+diff --git a/processor/resourcedetectionprocessor/internal/kubeadm/kubeadm_test.go b/processor/resourcedetectionprocessor/internal/kubeadm/kubeadm_test.go
+index a8d94016271..575a824b22d 100644
+--- a/processor/resourcedetectionprocessor/internal/kubeadm/kubeadm_test.go
++++ b/processor/resourcedetectionprocessor/internal/kubeadm/kubeadm_test.go
+@@ -16,7 +16,6 @@ import (
+ 	"k8s.io/client-go/kubernetes/fake"
+ 
+ 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig"
+-	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig/k8sconfigtypes"
+ )
+ 
+ const (
+@@ -128,28 +127,3 @@ func TestNewDetectorError(t *testing.T) {
+ 	require.ErrorContains(t, err, "failed creating Kubernetes client")
+ 	assert.Nil(t, d)
+ }
+-
+-func TestNewDetectorPreservesAPIConfig(t *testing.T) {
+-	orig := makeClient
+-	t.Cleanup(func() { makeClient = orig })
+-	makeClient = func(cfg k8sconfig.APIConfig) (k8s.Interface, error) {
+-		assert.Equal(t, k8sconfig.APIConfig{
+-			AuthType:     k8sconfig.AuthTypeKubeConfig,
+-			Context:      "custom-context",
+-			KubeAPIQPS:   12.5,
+-			KubeAPIBurst: 25,
+-		}, cfg)
+-		return fake.NewClientset(), nil
+-	}
+-
+-	cfg := CreateDefaultConfig()
+-	cfg.APIConfig = k8sconfigtypes.APIConfig{
+-		AuthType:     k8sconfigtypes.AuthTypeKubeConfig,
+-		Context:      "custom-context",
+-		KubeAPIQPS:   12.5,
+-		KubeAPIBurst: 25,
+-	}
+-	d, err := NewDetector(processortest.NewNopSettings(processortest.NopType), cfg, false)
+-	require.NoError(t, err)
+-	assert.NotNil(t, d)
+-}

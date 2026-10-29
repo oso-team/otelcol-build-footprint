@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 import sys
 
-from footprint import load_manifest
+from footprint import ROOT, FootprintError, load_manifest
 from publish import UNPUBLISHABLE_TEXT, validate_report
 
 SETTINGS = ('go_version', 'builder_version', 'collector_experimental', 'collector_stable',
@@ -37,6 +37,8 @@ def load_run(directory: Path, lock: dict, lock_hash: str) -> dict:
     for checkpoint in (before, after):
         if checkpoint['source_commit'] != manifest['source']['commit'] or checkpoint['lock_sha256'] != lock_hash:
             raise ValueError('source or version-lock drift')
+        if checkpoint.get('source_patch_sha256') != manifest['source'].get('patch', {}).get('sha256'):
+            raise ValueError('source patch checkpoint mismatch')
         env = checkpoint['go_env']
         expected = {'GOVERSION': 'go' + lock['go_version'], 'GOTOOLCHAIN': 'local',
                     'GOOS': lock['goos'], 'GOARCH': lock['goarch'], 'GOARM64': lock['goarm64'],
@@ -78,6 +80,9 @@ def load_run(directory: Path, lock: dict, lock_hash: str) -> dict:
                 raise ValueError('embedded binary build setting differs: ' + setting)
         if sha256(directory / 'work' / entry['id'] / 'dist' / manifest['builder']['dist']['name']) != receipt['sha256']:
             raise ValueError('binary checksum differs')
+    patch = manifest['source'].get('patch')
+    if patch and sha256(ROOT / patch['path']) != patch['sha256']:
+        raise ValueError('published source patch checksum mismatch')
     public_receipts = {name: {key: receipt[key] for key in ('sha256', 'bytes', 'inspection') if key in receipt} for name, receipt in receipts.items()}
     return {'manifest': manifest, 'report': report, 'binary_receipts': public_receipts,
             'tool_sha256': before['tool_sha256'],
@@ -121,10 +126,27 @@ def assemble(runs: dict, settings: dict, upstream_commit: str) -> dict:
                         'Module and package counts measure source reachability from RDP. Binary bytes measure the complete stripped Collector.',
                         'Every strategy uses the recorded Go/OCB/component versions and build settings. Historical measurements are not mixed into this comparison.',
                         'Exact measured source revisions are pinned; later test and documentation commits do not relabel these measurements.']}
+    if upstream['manifest'].get('comparison_story') == 'combined-config-decoupling':
+        if not upstream['manifest']['source'].get('patch'):
+            raise ValueError('combined story requires the explicit reconstruction patch')
+        result['comparison_context'] = {
+            'kind': 'combined-config-decoupling',
+            'scope': 'Combined omission-tag, configuration-decoupling and opt-in work; not the parent PR delta against current main.',
+            'construction': upstream['manifest']['source']['patch'],
+            'current_main_comparison': 'current-main/'
+        }
+        result['notes'] += [
+            'Stages one and two use pinned upstream source with only the EC2 and Kubernetes prerequisite Go/schema changes reversed. This is a controlled reconstruction, not an unmodified historical main release.',
+            'The same Go/OCB versions, module versions, minimal Collector composition and build flags are used for all stages. Stage three includes the current PR and both merged prerequisites.',
+            'Dependency improvements come from decoupling configuration and implementation helpers. Omit tags and enable tags are two ways to select the same implementations.'
+        ]
     if UNPUBLISHABLE_TEXT.search(json.dumps(result)):
         raise ValueError('comparison contains a private path, endpoint, or credential marker')
     return result
 
+
+def template_name(report: dict) -> str:
+    return 'comparison.html' if report.get('comparison_context', {}).get('kind') == 'combined-config-decoupling' else 'current-main.html'
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -144,14 +166,14 @@ def main() -> int:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + '\n')
         if args.html or args.site_index:
-            template = (Path(__file__).resolve().parents[1] / 'templates/comparison.html').read_text()
+            template = (Path(__file__).resolve().parents[1] / 'templates' / template_name(report)).read_text()
             payload = json.dumps(report, separators=(',', ':')).replace('<', '\\u003c')
             html = template.replace('COMPARISON_DATA', payload)
             for destination in (args.html, args.site_index):
                 if destination:
                     destination.write_text(html)
         print(f"Validated {len(report['rows'])} matched detector selections across {len(runs)} source runs")
-    except (OSError, ValueError, KeyError) as exc:
+    except (OSError, ValueError, KeyError, FootprintError) as exc:
         print('error: ' + str(exc), file=sys.stderr)
         return 1
     return 0

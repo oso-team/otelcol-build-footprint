@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import os
 import pathlib
@@ -83,7 +84,20 @@ def verify_source(source: pathlib.Path, manifest: dict[str, Any]) -> str:
     commit = command(["git", "rev-parse", "HEAD"], cwd=source).strip()
     if commit != expected["commit"]:
         raise FootprintError(f"source is at {commit}; expected {expected['commit']}")
-    if command(["git", "status", "--porcelain", "--untracked-files=all"], cwd=source).strip():
+    patch = expected.get("patch")
+    if patch:
+        relative = pathlib.PurePosixPath(patch["path"])
+        if relative.is_absolute() or ".." in relative.parts:
+            raise FootprintError("source patch must be a repository-relative path")
+        content = (ROOT / relative).read_bytes()
+        if hashlib.sha256(content).hexdigest() != patch["sha256"]:
+            raise FootprintError("source patch file checksum mismatch")
+        actual = command(["git", "diff", "--no-ext-diff", "--binary", "HEAD"], cwd=source)
+        if actual.encode() != content:
+            raise FootprintError("source changes differ from the exact pinned patch")
+        if command(["git", "ls-files", "--others", "--exclude-standard"], cwd=source).strip():
+            raise FootprintError("patched source contains untracked files")
+    elif command(["git", "status", "--porcelain", "--untracked-files=all"], cwd=source).strip():
         raise FootprintError("source checkout must be clean, including untracked files")
     remote = command(["git", "remote", "get-url", "origin"], cwd=source).strip()
     allowed = {expected["url"], expected["url"].removesuffix(".git"),

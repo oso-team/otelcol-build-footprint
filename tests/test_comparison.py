@@ -65,6 +65,11 @@ class ComparisonEvidenceTests(unittest.TestCase):
     def test_accepts_matching_evidence(self):
         self.assertEqual(2, len(self.load()['binary_receipts']))
 
+    def test_rejects_unrecorded_source_patch(self):
+        self.change('versions-after.json', lambda d: d.update(source_patch_sha256='unexpected'))
+        with self.assertRaisesRegex(ValueError, 'patch checkpoint'):
+            self.load()
+
     def test_rejects_changed_go_environment(self):
         self.change('versions-after.json', lambda d: d['go_env'].update(CGO_ENABLED='1'))
         with self.assertRaisesRegex(ValueError, 'environment'):
@@ -115,7 +120,7 @@ class ComparisonPresentationTests(unittest.TestCase):
         html = (ROOT / "docs/comparison.html").read_text()
         payload = html.split('<script id="comparison-data" type="application/json">', 1)[1].split("</script>", 1)[0]
         self.assertEqual(report, json.loads(payload))
-        expected = (ROOT / "templates/comparison.html").read_text().replace("COMPARISON_DATA", payload)
+        expected = (ROOT / "templates" / compare.template_name(report)).read_text().replace("COMPARISON_DATA", payload)
         self.assertEqual(expected, html)
         self.assertEqual(html, (ROOT / "docs/index.html").read_text())
 

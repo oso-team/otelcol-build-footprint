@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "upstream_commit": "6411c22b92c0b3819b709917e70c989798a3caca",
+  "go_version": "1.27.2",
+  "builder_version": "v0.164.0",
+  "builder_version_output": "ocb version v0.164.0",
+  "collector_experimental": "v0.164.0",
+  "collector_stable": "v1.70.0",
+  "otel_go": "v1.47.0",
+  "goos": "darwin",
+  "goarch": "arm64",
+  "goarm64": "v8.0",
+  "cgo_enabled": "0",
+  "goflags": "-p=3 -trimpath",
+  "ldflags": "-s -w",
+  "gowork": "off",
+  "goproxy": "https://proxy.golang.org,direct",
+  "builder_go_version": "1.27.2",
+  "pr_commit": "f2359adce5e5daf15b6987d6cd23bf83e6c80290",
+  "require_detector_inspection": true,
+  "go_sha256": "516c1fbb53b5f8f4852f0c3c379d45bcff53a1032e5cd1a9ca1738f03ba07cb1",
+  "builder_sha256": "72dbe800db15cf829b25230b9a3d9b2843cb50f91e1eac33fb67f7c59e9573c3"
+}

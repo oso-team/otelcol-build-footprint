@@ -64,6 +64,7 @@ def run(args: argparse.Namespace) -> None:
     def checkpoint(name):
         footprint.verify_source(source, manifest)
         data = {'source_commit': command(['git', 'rev-parse', 'HEAD']),
+                'source_patch_sha256': manifest['source'].get('patch', {}).get('sha256'),
                 'lock_sha256': digest(args.lock),
                 'go_env': json.loads(command([go, 'env', '-json', 'GOVERSION', 'GOTOOLCHAIN', 'GOWORK', 'GOOS', 'GOARCH', 'GOARM64', 'CGO_ENABLED', 'GOFLAGS'])),
                 'module_file_sha256': {file: digest(source/file) for file in files},
@@ -90,7 +91,7 @@ def run(args: argparse.Namespace) -> None:
     finally:
         os.chdir(original_cwd); os.environ.clear(); os.environ.update(original_env)
     after = checkpoint('versions-after')
-    for key in ('source_commit', 'lock_sha256', 'go_env', 'module_file_sha256', 'tool_sha256', 'benchmark_code_sha256'):
+    for key in ('source_commit', 'source_patch_sha256', 'lock_sha256', 'go_env', 'module_file_sha256', 'tool_sha256', 'benchmark_code_sha256'):
         if before[key] != after[key]:
             raise ValueError('phase drift: '+key)
     receipts = {}
